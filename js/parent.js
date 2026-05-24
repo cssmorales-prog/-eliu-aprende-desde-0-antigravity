@@ -451,6 +451,24 @@ const ParentDashboard = {
         const savedGemini = localStorage.getItem('eliu_aprende_gemini_key') || '';
         const geminiInput = document.getElementById('voice-gemini-key');
         if (geminiInput) geminiInput.value = savedGemini;
+
+        // --- POPULAR SELECTOR DE VOCES NATIVAS EN ESPAÑOL ---
+        this.populateSystemVoices();
+        if (window.speechSynthesis) {
+            window.speechSynthesis.onvoiceschanged = () => this.populateSystemVoices();
+        }
+
+        const systemVoiceSelect = document.getElementById('voice-system-selector');
+        if (systemVoiceSelect) {
+            systemVoiceSelect.onchange = (e) => {
+                const voiceName = e.target.value;
+                localStorage.setItem('eliu_aprende_voz_sistema', voiceName);
+                SoundManager.play('success');
+                if (typeof VoiceEngine !== 'undefined') {
+                    VoiceEngine.speak("¡Hola Eliu! Esta es mi nueva voz del sistema en español.");
+                }
+            };
+        }
     },
 
     updateVoiceSpeedLabel(val) {
@@ -985,5 +1003,26 @@ const ParentDashboard = {
                 <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; margin-top: 10px;">Este plan de acción se adapta dinámicamente según la racha y hábitos logrados.</div>
             </div>
         `;
+    },
+
+    // 🔊 POPULAR LAS VOCES EN ESPAÑOL DISPONIBLES EN EL NAVEGADOR
+    populateSystemVoices() {
+        const selector = document.getElementById('voice-system-selector');
+        if (!selector || !window.speechSynthesis) return;
+
+        const voices = window.speechSynthesis.getVoices();
+        const esVoices = voices.filter(v => v.lang.startsWith('es'));
+
+        if (esVoices.length === 0) {
+            selector.innerHTML = '<option value="">Solo voces en español disponibles</option>';
+            return;
+        }
+
+        const savedVoice = localStorage.getItem('eliu_aprende_voz_sistema') || '';
+
+        selector.innerHTML = esVoices.map(v => {
+            const selected = v.name === savedVoice ? 'selected' : '';
+            return `<option value="${v.name}" ${selected}>${v.name} (${v.lang})</option>`;
+        }).join('');
     }
 };

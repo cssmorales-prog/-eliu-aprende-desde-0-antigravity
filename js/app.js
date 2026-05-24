@@ -202,8 +202,15 @@ const VoiceEngine = {
         // 🌟 SELECCIÓN DE VOZ INTELIGENTE DE NIÑO/FEMENINA EN ESPAÑOL
         const voices = this.synth.getVoices();
         
-        // Priorizar la voz de Google en español ("la voz de Gemini") por sobre todo
-        let selectedVoice = voices.find(v => v.lang.startsWith('es') && v.name.includes('Google')) ||
+        const savedVoiceName = localStorage.getItem('eliu_aprende_voz_sistema');
+        let selectedVoice = null;
+        if (savedVoiceName) {
+            selectedVoice = voices.find(v => v.name === savedVoiceName);
+        }
+
+        if (!selectedVoice) {
+            // Priorizar la voz de Google en español ("la voz de Gemini") por sobre todo
+            selectedVoice = voices.find(v => v.lang.startsWith('es') && v.name.includes('Google')) ||
                             voices.find(v => v.lang.startsWith('es') && v.name.includes('Natural')) ||
                             voices.find(v => v.lang === 'es-CL' && v.name.includes('Sabina')) ||
                             voices.find(v => v.lang.startsWith('es') && (v.name.includes('Sabina') || v.name.includes('Daria') || v.name.includes('Helena') || v.name.includes('Zira') || v.name.includes('Microsoft Sabina') || v.name.includes('Microsoft Helena') || v.name.includes('Microsoft Daria') || v.name.includes('Microsoft Laura'))) ||
@@ -211,6 +218,7 @@ const VoiceEngine = {
                             voices.find(v => v.lang.startsWith('es') && v.gender === 'female') ||
                             voices.find(v => v.lang.startsWith('es')) ||
                             voices.find(v => v.default);
+        }
         
         if (selectedVoice) {
             this.activeUtterance.voice = selectedVoice;

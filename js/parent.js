@@ -1010,11 +1010,20 @@ const ParentDashboard = {
         const selector = document.getElementById('voice-system-selector');
         if (!selector || !window.speechSynthesis) return;
 
-        const voices = window.speechSynthesis.getVoices();
-        const esVoices = voices.filter(v => v.lang.startsWith('es'));
+        let voices = window.speechSynthesis.getVoices();
+        
+        // Si la lista de voces está vacía, reintentar en 250ms (Soluciona la carga asíncrona en Chrome/Edge)
+        if (voices.length === 0) {
+            setTimeout(() => this.populateSystemVoices(), 250);
+            return;
+        }
+
+        const esVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
 
         if (esVoices.length === 0) {
-            selector.innerHTML = '<option value="">Solo voces en español disponibles</option>';
+            // Mostrar todas las voces si por alguna razón no hay ninguna en español en el equipo
+            selector.innerHTML = '<option value="">Elige una voz disponible:</option>' + 
+                                 voices.map(v => `<option value="${v.name}">${v.name} (${v.lang})</option>`).join('');
             return;
         }
 

@@ -105,6 +105,25 @@
                     <button class="btn-canvas" id="btn-habit-skip-mic" style="margin-top: 14px; padding: 6px 12px; font-size: 12px;">Continuar ➡️</button>
                 </div>
 
+                <!-- Promesa del Día de Valores -->
+                <div id="habits-promise-box" style="display: none; text-align: center; margin: 24px 0;">
+                    <div style="font-size: 64px; margin-bottom: 12px;">🤝✨</div>
+                    <div style="font-size: 22px; font-weight: 700; color: var(--color-diario); margin-bottom: 16px; font-family: var(--font-kids);">La Promesa del Día de Eliu</div>
+                    <p style="font-size: 15px; color: var(--text-main); font-weight: 600; margin-bottom: 20px; line-height: 1.5; font-family: var(--font-kids);">
+                        "Prometo decir siempre la verdad, ser súper bondadoso con todos, y dar lo mejor de mí para aprender hoy." 💖
+                    </p>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <div id="promise-mic-status-text" style="font-size: 13px; font-weight: 700; color: var(--color-lenguaje); margin-bottom: 8px;">🎙️ Presiona el micrófono y di tu promesa en voz alta...</div>
+                        <div class="mic-glow-wrapper" style="position: relative; width: 60px; height: 60px;">
+                            <div class="mic-glow" id="promise-mic-glow" style="width: 80px; height: 80px; border-radius: 40px; background: rgba(0, 240, 255, 0.2); position: absolute; top: -10px; left: -10px; z-index: 1;"></div>
+                            <button class="btn-call-mic" id="btn-promise-mic" style="position: relative; z-index: 2; cursor: pointer; border-radius: 50%; font-size: 26px; padding: 0; background: linear-gradient(135deg, #00f0ff 0%, #0077b6 100%); border: none; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 10px rgba(0,240,255,0.4);">
+                                🎙️
+                            </button>
+                        </div>
+                        <button class="btn-canvas" id="btn-promise-skip" style="margin-top: 14px; padding: 6px 12px; font-size: 12px;">Saltar Promesa ➡️</button>
+                    </div>
+                </div>
+
                 <div id="habits-congrat-box" style="display: none; text-align: center; margin: 24px 0;">
                     <div style="font-size: 72px; margin-bottom: 16px;">🏆🎉</div>
                     <div style="font-size: 24px; font-weight: 700; color: var(--color-ciencias); margin-bottom: 8px;">¡Súper Hábitos Completados!</div>
@@ -122,41 +141,48 @@
         <main class="view-section" id="kids-dashboard-view">
             <div class="kids-dashboard-container">
                 
-                <!-- Banner de bienvenida interactivo -->
+                 <!-- Banner de bienvenida interactivo -->
                 <div class="welcome-banner">
                     <div class="welcome-text">
                         <h1>¡Hola Eliu! 🎮</h1>
-                        <p>Haz clic en Eliubot para escuchar tu misión del día o llámame:</p>
-                        <button class="btn-dashboard-call" id="btn-call-eliubot-sandbox" style="margin-top: 10px; display: flex; align-items: center; gap: 8px; font-family: var(--font-kids); font-weight: 700; font-size: 14px; padding: 8px 16px; border-radius: 12px; background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); border: none; color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4); transition: transform 0.2s;">
-                            <span>📞</span> Videollamada AI en Vivo
-                        </button>
+                        <p style="font-family: var(--font-kids); font-weight: 500;">Haz clic en Eliubot o presiona su micrófono para hacerle preguntas con Gemini:</p>
                     </div>
                     
                     <div class="speech-bubble" id="tito-speech-bubble">
                         ¡Hola Eliu! ¿Listo para explorar? Hoy sumaremos bloques en la página 56 de Supermatemáticos! 🤖
                     </div>
                     
-                    <div class="mascot-avatar" id="kids-mascot-avatar">
-                        <div class="robot-head">
-                            <div class="robot-ears">
-                                <div class="ear left-ear"></div>
-                                <div class="ear right-ear"></div>
-                            </div>
-                            <div class="robot-antenna">
-                                <div class="antenna-mast"></div>
-                                <div class="antenna-ball"></div>
-                            </div>
-                            <div class="robot-face">
-                                <div class="robot-eyes">
-                                    <div class="eye left-eye"></div>
-                                    <div class="eye right-eye"></div>
+                    <div class="mascot-mic-container" style="display: flex; flex-direction: column; align-items: center; gap: 12px; flex-shrink: 0; z-index: 5;">
+                        <div class="mascot-avatar" id="kids-mascot-avatar">
+                            <div class="robot-head">
+                                <div class="robot-ears">
+                                    <div class="ear left-ear"></div>
+                                    <div class="ear right-ear"></div>
                                 </div>
-                                <div class="robot-mouth">
-                                    <div class="mouth-bar"></div>
-                                    <div class="mouth-bar"></div>
-                                    <div class="mouth-bar"></div>
+                                <div class="robot-antenna">
+                                    <div class="antenna-mast"></div>
+                                    <div class="antenna-ball"></div>
+                                </div>
+                                <div class="robot-face">
+                                    <div class="robot-eyes">
+                                        <div class="eye left-eye"></div>
+                                        <div class="eye right-eye"></div>
+                                    </div>
+                                    <div class="robot-mouth">
+                                        <div class="mouth-bar"></div>
+                                        <div class="mouth-bar"></div>
+                                        <div class="mouth-bar"></div>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Micrófono Mágico de Eliubot en Dashboard -->
+                        <div class="mic-glow-wrapper" id="dashboard-mic-container" style="position: relative; width: 50px; height: 50px; cursor: pointer;">
+                            <div class="mic-glow" id="dashboard-mic-glow" style="width: 70px; height: 70px; border-radius: 35px; background: rgba(0, 240, 255, 0.2); position: absolute; top: -10px; left: -10px; z-index: 1; transition: all 0.3s;"></div>
+                            <button class="btn-call-mic" id="btn-dashboard-mic" style="position: relative; z-index: 2; cursor: pointer; border-radius: 50%; font-size: 24px; padding: 0; background: linear-gradient(135deg, #00f0ff 0%, #0077b6 100%); border: none; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 10px rgba(0, 240, 255, 0.4); transition: transform 0.2s;">
+                                🎙️
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -778,11 +804,10 @@
         </div>
 
         <!-- ==========================================================================
-             MODAL COMPLETO DE SIMULACIÓN DE VIDEOLLAMADA CON ELIUBOT
-             ========================================================================== -->
+             MODAL COMPLETO DE SIMULACIÓN DE VIDEOLLAMADA CON ELIUBOT (ELIMINADO / DESACTIVADO)
+             ========================================================================== 
         <div class="videocall-overlay" id="videocall-overlay">
             
-            <!-- Timbre / Ringing -->
             <div class="videocall-ringing" id="videocall-ringing">
                 <div class="ringing-avatar">🤖</div>
                 <div class="ringing-title">Llamada de: Eliubot 📞</div>
@@ -793,11 +818,9 @@
                 </button>
             </div>
 
-            <!-- Llamada Activa -->
             <div class="videocall-active" id="videocall-active">
                 
                 <div class="videocall-screen-grid">
-                    <!-- Stream de Eliubot -->
                     <div class="stream-card robot-stream">
                         <div class="robot-head talking-head" id="videocall-mascot-icon" style="transform: scale(1.6);">
                             <div class="robot-ears">
@@ -825,7 +848,6 @@
                         </div>
                     </div>
                     
-                    <!-- Stream Mini de Eliu (Emoji Flotante) -->
                     <div class="stream-card kid-stream">
                         <span class="kid-emoji">👦</span>
                         <div style="position: absolute; bottom: 8px; font-size: 11px; font-weight: 700; color: white; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px;">
@@ -834,13 +856,10 @@
                     </div>
                 </div>
 
-                <!-- Controles de la llamada -->
                 <div class="videocall-controls">
-                    <!-- Micrófono Glowing -->
                     <button class="btn-call-mic" id="btn-call-mic">
                         🎙️
                     </button>
-                    <!-- Cortar -->
                     <button class="btn-call-end" onclick="VideoCallSystem.endCall()">
                         🔴
                     </button>
@@ -849,6 +868,7 @@
             </div>
  
         </div>
+        -->
 
         <!-- ==========================================================================
              PANTALLA 6: TALLER DE LECTURA ACTIVA CON ELIUBOT

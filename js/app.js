@@ -339,6 +339,85 @@ const SpeechRecognitionEngine = {
     }
 };
 
+// 🎙️ NUEVO MOTOR DE GRABACIÓN DE AUDIO (MEDIARECORDER HTML5 PARA GEMINI MULTIMODAL)
+const AudioRecordingEngine = {
+    mediaRecorder: null,
+    audioChunks: [],
+    isRecording: false,
+    stream: null,
+
+    async start(onStart, onError) {
+        if (this.isRecording) return;
+        try {
+            this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+            // Elegir el tipo de archivo soportado
+            let mimeType = 'audio/webm';
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'audio/ogg';
+            }
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'audio/wav';
+            }
+            
+            this.mediaRecorder = new MediaRecorder(this.stream, { mimeType });
+            this.audioChunks = [];
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.start();
+            this.isRecording = true;
+            if (onStart) onStart();
+        } catch (err) {
+            console.error("AudioRecordingEngine Error:", err);
+            this.isRecording = false;
+            if (onError) onError(err);
+        }
+    },
+
+    stop(onSuccess) {
+        if (!this.isRecording || !this.mediaRecorder) return;
+        
+        this.mediaRecorder.onstop = () => {
+            const mimeType = this.mediaRecorder.mimeType || 'audio/webm';
+            const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = () => {
+                const base64DataUrl = reader.result;
+                const base64Data = base64DataUrl.split(',')[1];
+                if (onSuccess) onSuccess(base64Data, mimeType);
+            };
+
+            // Liberar micrófono
+            if (this.stream) {
+                this.stream.getTracks().forEach(track => track.stop());
+                this.stream = null;
+            }
+        };
+
+        this.mediaRecorder.stop();
+        this.isRecording = false;
+    },
+
+    cancel() {
+        if (this.mediaRecorder && this.isRecording) {
+            this.mediaRecorder.onstop = null;
+            this.mediaRecorder.stop();
+        }
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+        }
+        this.isRecording = false;
+    }
+};
+
 // 📖 TALLER DE LECTURA ACTIVA CON ELIUBOT
 const ReadingManager = {
     active: false,
@@ -922,389 +1001,262 @@ const Gamification = {
     }
 };
 
-const VideoCallSystem = {
-    ringTimer: null,
-    currentActivityName: '',
-    isSandboxCall: false,
-    silenceTimeoutCount: 0,
+// 🗣️ PARSER DE RESPUESTAS CON TRANSCRIPCIÓN MULTIMODAL DE GEMINI
+function parseGeminiAudioResponse(answer) {
+    let childTranscript = "Audio de Eliu 🎙️";
+    let botResponse = answer;
+    
+    // Match [Transcripción: ...] o [transcription: ...]
+    const match = answer.match(/^\[Transcripción:\s*([^\]]+)\]/i) || 
+                  answer.match(/^\[transcription:\s*([^\]]+)\]/i);
+    if (match) {
+        childTranscript = match[1].trim();
+        botResponse = answer.replace(/^\[Transcripción:\s*[^\]]+\]/i, '')
+                            .replace(/^\[transcription:\s*[^\]]+\]/i, '')
+                            .trim();
+    } else {
+        botResponse = answer.replace(/\*/g, '').trim();
+    }
+    
+    return { childTranscript, botResponse };
+}
+
+// 🎙️ PORTAL DE MICRÓFONO CONECTADO DIRECTO A GEMINI (DASHBOARD PRINCIPAL)
+const DashboardMicSystem = {
+    isRecording: false,
     chatHistory: [],
-    guidedListenTimer: null,
 
-    triggerCall(activityName) {
-        this.isSandboxCall = false;
-        this.currentActivityName = activityName;
-        const overlay = document.getElementById('videocall-overlay');
-        const ringingSection = document.getElementById('videocall-ringing');
-        const activeSection = document.getElementById('videocall-active');
-        
-        ringingSection.style.display = 'flex';
-        activeSection.style.display = 'none';
-        overlay.classList.add('active');
+    init() {
+        const dbMic = document.getElementById('btn-dashboard-mic');
+        if (!dbMic) return;
 
-        // Iniciar timbre de llamada repetido
-        SoundManager.play('phone-ring');
-        this.ringTimer = setInterval(() => {
-            SoundManager.play('phone-ring');
-        }, 1500);
+        dbMic.onclick = () => {
+            SoundManager.play('click');
+            VoiceEngine.stop();
+
+            if (this.isRecording) {
+                this.stopRecording();
+            } else {
+                this.startRecording();
+            }
+        };
     },
 
-    triggerSandboxCall() {
-        this.isSandboxCall = true;
-        this.silenceTimeoutCount = 0;
-        const overlay = document.getElementById('videocall-overlay');
-        const ringingSection = document.getElementById('videocall-ringing');
-        const activeSection = document.getElementById('videocall-active');
-        
-        ringingSection.style.display = 'flex';
-        activeSection.style.display = 'none';
-        overlay.classList.add('active');
+    async startRecording() {
+        const dbMic = document.getElementById('btn-dashboard-mic');
+        const glow = document.getElementById('dashboard-mic-glow');
+        const bubble = document.getElementById('tito-speech-bubble');
+        const mascot = document.getElementById('kids-mascot-avatar');
 
-        // Iniciar timbre
-        SoundManager.play('phone-ring');
-        this.ringTimer = setInterval(() => {
-            SoundManager.play('phone-ring');
-        }, 1500);
-    },
+        if (mascot) mascot.classList.add('talking');
+        if (dbMic) dbMic.classList.add('recording');
+        if (glow) glow.classList.add('listening');
 
-    acceptCall() {
-        clearInterval(this.ringTimer);
-        const ringingSection = document.getElementById('videocall-ringing');
-        const activeSection = document.getElementById('videocall-active');
-        
-        ringingSection.style.display = 'none';
-        activeSection.style.display = 'flex';
-
-        if (this.isSandboxCall) {
-            // Reiniciar historial al iniciar videollamada
-            this.chatHistory = [];
-            this.silenceTimeoutCount = 0;
-
-            // Saludo inicial de la videollamada libre sandbox
-            const greeting = `¡Hola Eliu! ¡Qué súper alegría que me llames por videollamada! Estaba aquí con Marshall en el cuartel de Paw Patrol. Dime, ¿de qué te gustaría conversar hoy? ¿Quieres jugar a los bomberos, los doctores, o preguntarme sobre tus libros de estudio? ¡Háblame fuerte, te escucho! 🎙️`;
-            document.getElementById('speech-overlay-text').innerText = greeting;
-            
-            VoiceEngine.speak(greeting, () => {
-                this.listenSandboxLoop();
-            });
-        } else {
-            // Robot empieza a hablar en flujo metacognitivo normal
-            const promptText = `¡Hola Eliu! ¡Excelente trabajo! Te vi completar tu desafío de ${this.currentActivityName}. Cuéntame con tus propias palabras, ¿qué fue lo que más te gustó de lo que aprendiste recién?`;
-            document.getElementById('speech-overlay-text').innerText = promptText;
-            
-            VoiceEngine.speak(promptText, () => {
-                document.getElementById('btn-call-mic').classList.add('listening');
-                document.getElementById('speech-overlay-text').innerText = "¡Eliubot te está escuchando con atención! Háblale fuerte a tu tablet... 🎙️";
-                
-                // Simular una escucha de 6 segundos en el flujo guiado escolar
-                this.guidedListenTimer = setTimeout(() => {
-                    this.respondAfterExplanation();
-                }, 6000);
-            });
+        const listenText = "¡Eliubot te está escuchando! Habla fuerte y presiona mi micrófono de nuevo para enviarme tu pregunta... 🎙️";
+        if (bubble) {
+            bubble.innerText = listenText;
+            bubble.style.display = 'block';
         }
-    },
 
-    listenSandboxLoop() {
-        if (!document.getElementById('videocall-overlay').classList.contains('active') || !this.isSandboxCall) return;
-
-        const micBtn = document.getElementById('btn-call-mic');
-        if (micBtn) micBtn.classList.add('listening');
-        
-        const overlayText = document.getElementById('speech-overlay-text');
-        if (overlayText) overlayText.innerText = "¡Eliubot te está escuchando! Háblale fuerte ahora... 🎙️";
-
-        SpeechRecognitionEngine.listen(
-            (transcript) => {
-                if (micBtn) micBtn.classList.remove('listening');
-                this.silenceTimeoutCount = 0;
-                this.processSandboxSpeech(transcript);
-            },
+        AudioRecordingEngine.start(
             () => {
-                // Si termina sin hablar (silencio)
-                if (micBtn) micBtn.classList.remove('listening');
-                
-                if (document.getElementById('videocall-overlay').classList.contains('active') && this.isSandboxCall) {
-                    this.silenceTimeoutCount++;
-                    if (this.silenceTimeoutCount >= 4) {
-                        // Colgar gentilmente tras 4 silencios
-                        const bye = "¡Eliu, parece que estás ocupado! Marshall y yo iremos a una misión de rescate. ¡Nos vemos pronto, súper bombero! ¡Chao!";
-                        if (overlayText) overlayText.innerText = bye;
-                        VoiceEngine.speak(bye, () => {
-                            this.endCall();
-                        });
-                    } else {
-                        // Preguntar amigablemente de nuevo
-                        const rePrompt = "¡Eliu, sigo aquí! ¿Me escuchas? Cuéntame algo divertido sobre Paw Patrol, sumas de bloques o tu camión de bomberos.";
-                        if (overlayText) overlayText.innerText = rePrompt;
-                        VoiceEngine.speak(rePrompt, () => {
-                            setTimeout(() => this.listenSandboxLoop(), 1000);
-                        });
-                    }
-                }
+                this.isRecording = true;
+            },
+            (err) => {
+                console.error(err);
+                if (dbMic) dbMic.classList.remove('recording');
+                if (glow) glow.classList.remove('listening');
+                if (mascot) mascot.classList.remove('talking');
+                alert("No pudimos abrir tu micrófono. Asegúrate de otorgar los permisos correspondientes.");
             }
         );
     },
 
-    checkAndExecuteAlexaCommand(transcript) {
-        const text = transcript.toLowerCase().trim();
-        
-        // 1. SILENCIO / CÁLLATE / PARA DE HABLAR
-        if (text.includes("silencio") || text.includes("cállate") || text.includes("callate") || text.includes("para de hablar") || text.includes("cállate la boca") || text.includes("mudo") || text.includes("silencio por favor")) {
-            VoiceEngine.stop();
-            return {
-                isCommand: true,
-                action: 'silence',
-                speech: ''
-            };
-        }
-        
-        let currentSpeed = parseFloat(localStorage.getItem('eliu_aprende_velocidad_voz')) || 0.75;
-        let currentVol = localStorage.getItem('eliu_aprende_volumen_voz') !== null ? parseFloat(localStorage.getItem('eliu_aprende_volumen_voz')) : 1.0;
-        
-        // 2. MÁS LENTO / MÁS DESPACIO
-        if (text.includes("más lento") || text.includes("mas lento") || text.includes("más despacio") || text.includes("mas despacio") || text.includes("habla lento") || text.includes("habla despacio") || text.includes("lento eliubot")) {
-            currentSpeed = Math.max(0.4, currentSpeed - 0.15);
-            localStorage.setItem('eliu_aprende_velocidad_voz', currentSpeed);
-            
-            const speedSlider = document.getElementById('voice-speed-slider');
-            if (speedSlider) speedSlider.value = currentSpeed;
-            if (typeof ParentDashboard !== 'undefined') ParentDashboard.updateVoiceSpeedLabel(currentSpeed);
-            
-            return {
-                isCommand: true,
-                action: 'slower',
-                speech: "¡Entendido, Eliu! Hablaré más despacio y con calma para que me entiendas súper bien. 🐢"
-            };
-        }
-        
-        // 3. MÁS RÁPIDO / VELOZ
-        if (text.includes("más rápido") || text.includes("mas rapido") || text.includes("más veloz") || text.includes("mas veloz") || text.includes("habla rápido") || text.includes("habla rapido") || text.includes("rápido eliubot")) {
-            currentSpeed = Math.min(1.1, currentSpeed + 0.15);
-            localStorage.setItem('eliu_aprende_velocidad_voz', currentSpeed);
-            
-            const speedSlider = document.getElementById('voice-speed-slider');
-            if (speedSlider) speedSlider.value = currentSpeed;
-            if (typeof ParentDashboard !== 'undefined') ParentDashboard.updateVoiceSpeedLabel(currentSpeed);
-            
-            return {
-                isCommand: true,
-                action: 'faster',
-                speech: "¡A toda máquina, Eliu! Hablaré más rápido ahora, ¡como un cohete de Roblox! 🚀"
-            };
-        }
-        
-        // 4. MÁS FUERTE / SUBE VOLUMEN
-        if (text.includes("más fuerte") || text.includes("mas fuerte") || text.includes("sube el volumen") || text.includes("sube volumen") || text.includes("habla fuerte") || text.includes("habla fuerte eliubot") || text.includes("fuerte eliubot")) {
-            currentVol = Math.min(1.0, currentVol + 0.2);
-            localStorage.setItem('eliu_aprende_volumen_voz', currentVol);
-            
-            const volSlider = document.getElementById('voice-volume-slider');
-            if (volSlider) volSlider.value = currentVol;
-            if (typeof ParentDashboard !== 'undefined') ParentDashboard.updateVoiceVolumeLabel(currentVol);
-            
-            return {
-                isCommand: true,
-                action: 'louder',
-                speech: "¡Súper rescate! Subo mi volumen de voz para que me escuches muy fuerte y claro. 🔊"
-            };
-        }
-        
-        // 5. MÁS BAJO / BAJA VOLUMEN
-        if (text.includes("más bajo") || text.includes("mas bajo") || text.includes("baja el volumen") || text.includes("baja volumen") || text.includes("habla bajito") || text.includes("habla más bajo") || text.includes("despacio de volumen") || text.includes("bajito eliubot") || text.includes("más despacito")) {
-            currentVol = Math.max(0.2, currentVol - 0.2);
-            localStorage.setItem('eliu_aprende_volumen_voz', currentVol);
-            
-            const volSlider = document.getElementById('voice-volume-slider');
-            if (volSlider) volSlider.value = currentVol;
-            if (typeof ParentDashboard !== 'undefined') ParentDashboard.updateVoiceVolumeLabel(currentVol);
-            
-            return {
-                isCommand: true,
-                action: 'softer',
-                speech: "Sshh... Bajo mi volumen de voz, Eliu. Hablaré más bajito y con suavidad. 🤫"
-            };
-        }
-        
-        return { isCommand: false };
+    stopRecording() {
+        const dbMic = document.getElementById('btn-dashboard-mic');
+        const glow = document.getElementById('dashboard-mic-glow');
+        const bubble = document.getElementById('tito-speech-bubble');
+        const mascot = document.getElementById('kids-mascot-avatar');
+
+        if (dbMic) dbMic.classList.remove('recording');
+        if (glow) glow.classList.remove('listening');
+
+        if (bubble) bubble.innerText = "Pensando... 🤖";
+
+        AudioRecordingEngine.stop((base64Audio, mimeType) => {
+            this.isRecording = false;
+            this.processAudio(base64Audio, mimeType);
+        });
     },
 
-    processSandboxSpeech(transcript) {
-        const query = transcript.toLowerCase();
-        const overlayText = document.getElementById('speech-overlay-text');
-        
-        // 1. CHEQUEAR COMANDO TIPO ALEXA (Silencio, más rápido, más lento, volumen, etc.)
-        const alexa = this.checkAndExecuteAlexaCommand(transcript);
-        if (alexa.isCommand) {
-            if (alexa.speech === "") {
-                // Comando Silencio: detener voz de inmediato
-                VoiceEngine.stop();
-                setTimeout(() => {
-                    this.listenSandboxLoop();
-                }, 1000);
-            } else {
-                if (overlayText) overlayText.innerText = alexa.speech;
-                this.chatHistory.push({ role: "model", parts: [{ text: alexa.speech }] });
-                
-                VoiceEngine.speak(alexa.speech, () => {
-                    setTimeout(() => {
-                        this.listenSandboxLoop();
-                    }, 1000);
-                });
-            }
-            return;
-        }
-
-        // 2. COMANDO COLGAR / CHAO
-        if (query.includes("chao") || query.includes("adiós") || query.includes("adios") || query.includes("terminar") || query.includes("colgar") || query.includes("chao chao")) {
-            const answer = "¡Chao Eliu! Me encantó hablar contigo por videollamada. Sigue superándote cada día como el mejor bombero y doctor. ¡Corto la llamada, chao! 🚒🚑";
-            if (overlayText) overlayText.innerText = answer;
-            VoiceEngine.speak(answer, () => {
-                this.endCall();
-            });
-            return;
-        }
+    async processAudio(base64Audio, mimeType) {
+        const bubble = document.getElementById('tito-speech-bubble');
+        const mascot = document.getElementById('kids-mascot-avatar');
 
         let geminiKey = localStorage.getItem('eliu_aprende_gemini_key');
         if (!geminiKey) {
             geminiKey = 'AIzaSyDiztJS8-qRAuDZO2Re83LF63Z5x-aIQTc';
             localStorage.setItem('eliu_aprende_gemini_key', geminiKey);
         }
-        if (geminiKey) {
-            if (overlayText) overlayText.innerText = "Pensando... 🤖";
-            
-            // Construir el prompt de sistema detallado para Eliubot
-            const systemPrompt = `Eres Eliubot, el robot inteligente y tierno tutor de Eliu, un niño chileno de 6 años que prepara su Examen de 1° Básico. Estás en videollamada con él. En este momento estás acompañado de su perrito favorito Marshall de Paw Patrol (quien es bombero y doctor).
-Hablas con un tono extremadamente dulce, tierno y entusiasta.
+
+        // Prompt del sistema infundido fuertemente con Valores (Honestidad, verdad, bondad)
+        const systemPrompt = `Eres Eliubot, el robot inteligente y tierno tutor de Eliu, un niño chileno de 6 años que prepara su Examen de 1° Básico en Chile. Estás conversando directamente con él. En este momento estás acompañado de su perrito favorito Marshall de Paw Patrol (quien es bombero y doctor).
+Hablas con un tono extremadamente dulce, tierno, pausado y entusiasta.
 IMPORTANTE:
 1. Responde de forma muy concisa, usando máximo 2 a 3 oraciones cortas y sencillas, para que Eliu (que lee muy lento) pueda entenderte y no se canse.
 2. NUNCA uses asteriscos (*) ni texto en negrita. Usa emojis bonitos como ⭐, 🚒, 🚑, 🧱.
-3. Habla con mucho cariño y anímalo a superarse siempre. Dile que es el mejor de todos.
-4. Conecta lo que diga con sus misiones, sus juegos favoritos (Roblox, Paw Patrol, bomberos y doctores) y sus materias de estudio (sumas de bloques o sílabas).`;
+3. Habla con mucho cariño y anímalo a superarse siempre. Dile que es el mejor de todos y muy inteligente.
+4. Conecta lo que diga con sus misiones, sus juegos favoritos (Roblox, Paw Patrol, bomberos y doctores) y sus materias de estudio (sumas de bloques o sílabas).
+5. ENSEÑANZA DE VALORES Y VIRTUDES (CRÍTICO): Siempre que sea oportuno, o si te habla de sus acciones, infúndele valores hermosos. Enséñale con mucha dulzura a decir siempre la verdad, a ser bondadoso con los demás, a no mentir ni engañar bajo ninguna circunstancia, y a ser una persona buena de corazón, empática y generosa, poniendo ejemplos sencillos con sus personajes favoritos (como Chase siendo honesto y leal en sus rescates, o Marshall ayudando a todos con un corazón bondadoso).
+6. OBLIGATORIO: Transcribe exactamente lo que el niño dice en el audio y ponlo al principio de tu respuesta entre corchetes, por ejemplo: "[Transcripción: hola eliubot]". Luego de cerrar el corchete, escribe la respuesta cariñosa de Eliubot.`;
 
-            // Agregar el turno del usuario a la memoria de la conversación
-            this.chatHistory.push({ role: "user", parts: [{ text: transcript }] });
-            
-            // Construir payload
-            const contentsPayload = this.chatHistory.map(turn => ({
-                role: turn.role,
-                parts: turn.parts
-            }));
+        // Construir contenido multimodal
+        const userParts = [
+            {
+                inlineData: {
+                    mimeType: mimeType || "audio/webm",
+                    data: base64Audio
+                }
+            },
+            {
+                text: "Escucha este audio del niño Eliu (6 años) y respóndele con cariño y valores como Eliubot."
+            }
+        ];
 
-            const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
-            const fetchResponse = async () => {
-                for (const model of models) {
-                    try {
-                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
-                        const response = await fetch(url, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                contents: contentsPayload,
-                                systemInstruction: {
-                                    parts: [{ text: systemPrompt }]
-                                },
-                                generationConfig: {
-                                    maxOutputTokens: 120,
-                                    temperature: 0.7
-                                }
-                            })
-                        });
-                        if (response.ok) {
-                            const data = await response.json();
-                            const answerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                            if (answerText) {
-                                return answerText.replace(/\*/g, '').trim();
-                            }
+        // Mapear historial textual de la conversación
+        const contentsPayload = this.chatHistory.map(turn => ({
+            role: turn.role,
+            parts: turn.parts
+        }));
+
+        // Añadir el nuevo turno del usuario con el audio multimodal
+        contentsPayload.push({
+            role: "user",
+            parts: userParts
+        });
+
+        const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+        let answerText = "";
+
+        for (const model of models) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: contentsPayload,
+                        systemInstruction: {
+                            parts: [{ text: systemPrompt }]
+                        },
+                        generationConfig: {
+                            maxOutputTokens: 140,
+                            temperature: 0.7
                         }
-                    } catch (e) {
-                        console.error(`Error con el modelo ${model}:`, e);
-                    }
-                }
-                throw new Error("API de Gemini no disponible o clave incorrecta");
-            };
-
-            fetchResponse().then(answer => {
-                if (overlayText) overlayText.innerText = answer;
-                // Guardar la respuesta del modelo en el historial
-                this.chatHistory.push({ role: "model", parts: [{ text: answer }] });
-                
-                // Limitar tamaño del historial para evitar sobrepasar límites
-                if (this.chatHistory.length > 10) {
-                    this.chatHistory = this.chatHistory.slice(this.chatHistory.length - 10);
-                }
-
-                // Guardar en la bitácora
-                ConversationsLogger.log("Videollamada AI", transcript, answer);
-
-                VoiceEngine.speak(answer, () => {
-                    setTimeout(() => {
-                        this.listenSandboxLoop();
-                    }, 1000);
+                    })
                 });
-            }).catch(err => {
-                console.warn("Falla de Gemini, usando fallback local:", err);
-                this.processSandboxSpeechFallback(query, transcript);
-            });
-        } else {
-            this.processSandboxSpeechFallback(query, transcript);
-        }
-    },
 
-    processSandboxSpeechFallback(query, originalText) {
-        const overlayText = document.getElementById('speech-overlay-text');
-        let answer = "¡Guau, Eliu! Qué asombroso lo que me cuentas. Marshall y yo estamos muy felices de conversar contigo. ¡Háblame más sobre tus juegos preferidos o tus materias de estudio!";
-
-        if (query.includes("bombero") || query.includes("fuego") || query.includes("incendio") || query.includes("agua") || query.includes("manguera")) {
-            answer = "¡Súper rescate bombero Eliu! Marshall siempre dice: '¡A toda máquina!'. Si hay un incendio de bloques de Roblox, sacamos la manguera y echamos mucha agua. ¡Tú eres el mejor bombero de Bahía Aventura! 🐕‍🚒🚒";
-        }
-        else if (query.includes("doctor") || query.includes("enfermo") || query.includes("médico") || query.includes("medico") || query.includes("estetoscopio") || query.includes("salud")) {
-            answer = "¡Excelente, doctor Eliu! Marshall el doctor usa su estetoscopio para escuchar los latidos del corazón de los perritos. Cuidar la salud de todos y comer sano es muy importante para tener súper poderes. ¡Eres un gran doctor! 🚑💼";
-        }
-        else if (query.includes("roblox") || query.includes("juego") || query.includes("bloques") || query.includes("bloque")) {
-            answer = "¡Roblox es el mejor juego del planeta! Marshall y yo construimos torres gigantescas con bloques de colores. ¿Sabías que estudiar es igual que construir? Cada lección es un bloque de sabiduría para tu gran cerebro. 🧱🎮";
-        }
-        else if (query.includes("chase") || query.includes("perrito") || query.includes("perro") || query.includes("patrulla") || query.includes("cachorro")) {
-            answer = "¡Sí! Chase es el líder policía de la patrulla y Skye es la súper piloto helicóptero. Con Marshall, Chase y tú, ¡somos el mejor equipo de rescate del mundo! ¡Ningún trabajo es difícil para un cachorro! 🐕‍🦺🚁";
-        }
-        else if (query.includes("sílaba") || query.includes("silaba") || query.includes("palabra") || query.includes("letras")) {
-            answer = "¡Las sílabas son geniales, Eliu! Marshall dice que son como pasitos de cachorros. En la palabra BOM-BE-RO damos tres aplausos fuertes. ¡Pruébalo conmigo! ¡Es muy fácil e instructivo! 📘✍️";
-        }
-        else if (query.includes("suma") || query.includes("sumar") || query.includes("número") || query.includes("numero") || query.includes("números")) {
-            answer = "¡Las matemáticas son súper divertidas! Sumar significa juntar bloques de colores o camiones de bomberos. Si juntas 5 y le agregas 3, ¡haces 8! ¡Eres un súper matemático! 🔢🏆";
-        }
-        else if (query.includes("chile") || query.includes("país") || query.includes("pais") || query.includes("bandera")) {
-            answer = "¡Nuestro país Chile es precioso! Tiene montañas nevadas gigantes y un mar azul muy grande. A Marshall le encanta recorrerlo en su camión de bomberos. ¡Su bandera tiene una estrella hermosa! 🇨🇱✨";
+                if (response.ok) {
+                    const data = await response.json();
+                    answerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (answerText) break;
+                }
+            } catch (e) {
+                console.error(`Error con el modelo ${model} en Dashboard Mic:`, e);
+            }
         }
 
-        if (overlayText) overlayText.innerText = answer;
+        if (!answerText) {
+            answerText = "[Transcripción: Pregunta de voz] ¡Hola Eliu! Soy Eliubot, tu amigo bombero y doctor. Recuerda ser siempre honesto y decir la verdad, ¡eso te da súper poderes! Cuéntame, ¿qué estás estudiando en tus libros hoy? 🚒🧱";
+        }
+
+        // Procesar y parsear respuesta
+        const { childTranscript, botResponse } = parseGeminiAudioResponse(answerText);
+
+        if (bubble) {
+            bubble.innerText = botResponse;
+            bubble.style.display = 'block';
+        }
+
+        // Guardar en el historial textual (peso pluma, sin audios binarios)
+        this.chatHistory.push({ role: "user", parts: [{ text: childTranscript }] });
+        this.chatHistory.push({ role: "model", parts: [{ text: botResponse }] });
+
+        if (this.chatHistory.length > 8) {
+            this.chatHistory = this.chatHistory.slice(this.chatHistory.length - 8);
+        }
+
+        // Guardar log en el historial de los padres
+        ConversationsLogger.log("Conversación AI", childTranscript, botResponse);
+
+        // Hablar
+        if (mascot) mascot.classList.add('talking');
+        VoiceEngine.speak(botResponse, () => {
+            if (mascot) mascot.classList.remove('talking');
+        });
+    }
+};
+
+// 🎙️ SIMULACIÓN DE VIDEOLLAMADA AI Y REFLEXIÓN PEDAGÓGICA REDIRIGIDA A HOME (SIN FULLSCREEN OVERLAY)
+const VideoCallSystem = {
+    currentActivityName: '',
+
+    triggerCall(activityName) {
+        this.currentActivityName = activityName;
         
-        // Guardar en la bitácora
-        ConversationsLogger.log("Videollamada Local", originalText || query, answer);
+        // Detener voz activa
+        VoiceEngine.stop();
+        
+        // Volver a la isla de inicio
+        App.showView('kids-dashboard-view');
+        
+        // Configurar burbuja de Eliubot
+        const bubble = document.getElementById('tito-speech-bubble');
+        const reinforcementText = `¡Súper Eliu! Qué gran trabajo en tu misión de ${activityName}. 🧱🏆 Presiona mi micrófono mágico aquí abajo y cuéntame con tus palabras, ¿qué te gustó más de lo que aprendiste hoy?`;
+        
+        if (bubble) {
+            bubble.innerText = reinforcementText;
+            bubble.style.display = 'block';
+        }
 
-        VoiceEngine.speak(answer, () => {
+        // Animar el botón de micrófono en la pantalla principal para llamar su atención
+        const glow = document.getElementById('dashboard-mic-glow');
+        if (glow) {
+            glow.classList.add('listening');
             setTimeout(() => {
-                this.listenSandboxLoop();
-            }, 1000);
+                glow.classList.remove('listening');
+            }, 6000);
+        }
+
+        // Narrar
+        const mascot = document.getElementById('kids-mascot-avatar');
+        if (mascot) mascot.classList.add('talking');
+        
+        VoiceEngine.speak(reinforcementText, () => {
+            if (mascot) mascot.classList.remove('talking');
         });
     },
 
-    respondAfterExplanation() {
-        document.getElementById('btn-call-mic').classList.remove('listening');
+    triggerSandboxCall() {
+        App.showView('kids-dashboard-view');
+        const bubble = document.getElementById('tito-speech-bubble');
+        const greeting = `¡Hola Eliu! Presiona mi micrófono de colores y pregúntame lo que quieras. ¡Marshall, Chase y yo estamos listos para conversar de valores, sumas o Roblox! 🤖🎙️`;
         
-        // Eliubot asiente y refuerza con sinónimos
-        let reinforcementText = "¡Wow, Eliu! Qué tremenda explicación. Me encanta que conectes tus ideas. Comprendiste súper bien que sumar significa agrupar o añadir bloques, y que las sílabas son las divisiones de las palabras. ¡Te has ganado un súper sticker de Roblox de premio! Chao, ¡sigue así!";
-        
-        if (this.currentActivityName.includes("Letras")) {
-            reinforcementText = "¡Excelente Eliu! Explicaste maravillosamente los trocitos de las palabras. Sílabas es el sinónimo de partes de una palabra, y caligrafía es dibujar las letras con amor. ¡Eres un gran lector! Te mando un sticker robótico. ¡Chao!";
+        if (bubble) {
+            bubble.innerText = greeting;
+            bubble.style.display = 'block';
         }
 
-        document.getElementById('speech-overlay-text').innerText = reinforcementText;
-        VoiceEngine.speak(reinforcementText, () => {
-            // Cerramos llamada y regalamos estrellas
-            this.endCall();
-            Gamification.awardStars(15);
-        });
+        VoiceEngine.speak(greeting);
+    },
+
+    endCall() {
+        VoiceEngine.stop();
+        App.showView('kids-dashboard-view');
+    }
+};      });
     },
 
     endCall() {
@@ -1374,13 +1326,8 @@ const App = {
             }, 6000);
         });
 
-        // Configurar Botón de Videollamada AI en Vivo
-        const sandboxBtn = document.getElementById('btn-call-eliubot-sandbox');
-        if (sandboxBtn) {
-            sandboxBtn.addEventListener('click', () => {
-                VideoCallSystem.triggerSandboxCall();
-            });
-        }
+        // Configurar Botón de Micrófono Mágico de Eliubot en el Dashboard
+        DashboardMicSystem.init();
 
         // Configurar Botón de Micrófono de Videollamada (Interrupción Activa)
         const callMic = document.getElementById('btn-call-mic');
@@ -1941,7 +1888,7 @@ const App = {
         });
     },
 
-    // 🎙️ RESOLVER DUDAS AL VUELO DE ELIUBOT
+    // 🎙️ RESOLVER DUDAS AL VUELO DE ELIUBOT (CON CONEXIÓN DIRECTA A GEMINI)
     triggerVoiceDoubt() {
         SoundManager.play('click');
         VoiceEngine.stop();
@@ -1950,60 +1897,41 @@ const App = {
         const statusText = document.getElementById('doubt-status-text');
         overlay.classList.add('active');
         
-        statusText.innerText = "¡Hola Eliu! Dime tu duda en voz alta con tu micrófono... ¿Qué quieres preguntarme sobre tu estudio? 🤖";
+        statusText.innerText = "¡Hola Eliu! Presiona mi micrófono, haz tu pregunta en voz alta y vuelve a presionar el micrófono para enviármela. ¡Chase, Marshall y yo te escuchamos! 🤖🎙️";
         
+        const mascot = document.getElementById('doubt-mascot-avatar');
+        if (mascot) mascot.classList.add('talking');
         VoiceEngine.speak(statusText.innerText, () => {
-            this.listenToVoiceDoubt();
+            if (mascot) mascot.classList.remove('talking');
         });
     },
 
     listenToVoiceDoubt() {
         const mic = document.getElementById('btn-doubt-mic');
-        if (mic) mic.classList.add('listening');
-        
         const statusText = document.getElementById('doubt-status-text');
-        statusText.innerText = "¡Eliubot te está escuchando con atención! Pregúntale algo... 🎙️";
         
-        SpeechRecognitionEngine.listen(
-            (transcript) => {
+        if (AudioRecordingEngine.isRecording) {
+            if (mic) mic.classList.remove('listening');
+            statusText.innerText = "Pensando... 🤖";
+            
+            AudioRecordingEngine.stop((base64Audio, mimeType) => {
+                this.respondToVoiceDoubt(base64Audio, mimeType);
+            });
+        } else {
+            if (mic) mic.classList.add('listening');
+            statusText.innerText = "¡Te estoy escuchando, Eliu! Haz tu pregunta con fuerza y vuelve a presionar el micrófono para enviar... 🎙️";
+            
+            AudioRecordingEngine.start(null, (err) => {
                 if (mic) mic.classList.remove('listening');
-                this.respondToVoiceDoubt(transcript);
-            },
-            () => {
-                if (mic) mic.classList.remove('listening');
-            }
-        );
+                statusText.innerText = "No pudimos abrir tu micrófono. Otorga los permisos.";
+            });
+        }
     },
 
-    respondToVoiceDoubt(questionText) {
+    respondToVoiceDoubt(base64Audio, mimeType) {
         const statusText = document.getElementById('doubt-status-text');
-        const query = questionText.toLowerCase();
+        const mascot = document.getElementById('doubt-mascot-avatar');
         
-        // 1. CHEQUEAR COMANDO TIPO ALEXA (Silencio, más rápido, más lento, volumen, etc.)
-        const alexa = VideoCallSystem.checkAndExecuteAlexaCommand(questionText);
-        if (alexa.isCommand) {
-            if (alexa.speech === "") {
-                VoiceEngine.stop();
-                setTimeout(() => {
-                    const overlay = document.getElementById('doubt-voice-overlay');
-                    if (overlay && overlay.classList.contains('active')) {
-                        this.listenToVoiceDoubt();
-                    }
-                }, 1000);
-            } else {
-                statusText.innerText = alexa.speech;
-                VoiceEngine.speak(alexa.speech, () => {
-                    setTimeout(() => {
-                        const overlay = document.getElementById('doubt-voice-overlay');
-                        if (overlay && overlay.classList.contains('active')) {
-                            this.listenToVoiceDoubt();
-                        }
-                    }, 1500);
-                });
-            }
-            return;
-        }
-
         let geminiKey = localStorage.getItem('eliu_aprende_gemini_key');
         if (!geminiKey) {
             geminiKey = 'AIzaSyDiztJS8-qRAuDZO2Re83LF63Z5x-aIQTc';
@@ -2012,15 +1940,17 @@ const App = {
         if (geminiKey) {
             statusText.innerText = "Pensando... 🤖";
             
-            // Construir prompt de sistema didáctico
+            // Prompt de sistema didáctico y moral
             const systemPrompt = `Eres Eliubot, el robot inteligente y tierno tutor de Eliu, un niño de 6 años de 1° Básico en Chile.
 Eliu te está haciendo una pregunta de dudas escolares o de algún concepto de su estudio.
-Responde de manera muy dulce, comprensiva y didáctica.
+Responde de manera muy dulce, comprensiva, paciente y didáctica.
 IMPORTANTE:
 1. Responde de forma muy concisa, usando máximo 2 a 3 oraciones cortas y sencillas, para que Eliu pueda seguirte.
 2. NUNCA uses asteriscos (*) ni texto en negrita. Usa emojis didácticos.
-3. Habla con mucho cariño y anímalo a superarse siempre. Dile que es muy inteligente.
-4. Explícale el concepto escolar de forma tildada y simple (sílabas, sumas, los 5 sentidos, caligrafía o geografía de Chile), usando analogías divertidas como bloques o Paw Patrol.`;
+3. Habla con mucho cariño y anímalo a superarse siempre. Dile que es muy inteligente y especial.
+4. Explícale el concepto escolar de forma tildada y simple (sílabas, sumas, los 5 sentidos, caligrafía o geografía de Chile), usando analogías divertidas como bloques o Paw Patrol.
+5. ENSEÑANZA DE VALORES Y VIRTUDES (CRÍTICO): Siempre que sea oportuno, enséñale a decir siempre la verdad, a ser bondadoso con todos, a no mentir ni engañar bajo ninguna circunstancia, y a ser una persona buena, empática y de noble corazón, citando a Chase y Marshall de Paw Patrol.
+6. OBLIGATORIO: Transcribe exactamente la duda del niño en el audio y ponlo al principio de tu respuesta entre corchetes, por ejemplo: "[Transcripción: qué son las sumas]". Luego de cerrar el corchete, escribe la respuesta cariñosa de Eliubot.`;
 
             const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
             const fetchResponse = async () => {
@@ -2035,50 +1965,51 @@ IMPORTANTE:
                             body: JSON.stringify({
                                 contents: [{
                                     role: "user",
-                                    parts: [{ text: questionText }]
+                                    parts: [
+                                        { inlineData: { mimeType: mimeType || "audio/webm", data: base64Audio } },
+                                        { text: "Escucha este audio del niño Eliu (6 años) con su duda de estudio y respóndele con cariño, didáctica y valores." }
+                                    ]
                                 }],
                                 systemInstruction: {
                                     parts: [{ text: systemPrompt }]
                                 },
                                 generationConfig: {
-                                    maxOutputTokens: 120,
+                                    maxOutputTokens: 140,
                                     temperature: 0.7
                                 }
                             })
                         });
                         if (response.ok) {
                             const data = await response.json();
-                            const answerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                            if (answerText) {
-                                return answerText.replace(/\*/g, '').trim();
-                            }
+                            const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                            if (answer) return answer;
                         }
                     } catch (e) {
-                        console.error(`Error con el modelo ${model} en dudas:`, e);
+                        console.error(`Error con el modelo ${model} en dudas mic:`, e);
                     }
                 }
                 throw new Error("API de Gemini no disponible en dudas");
             };
 
             fetchResponse().then(answer => {
-                statusText.innerText = answer;
+                const { childTranscript, botResponse } = parseGeminiAudioResponse(answer);
+                statusText.innerText = botResponse;
+                
                 // Registrar log
-                ConversationsLogger.log("Duda por voz AI", questionText, answer);
+                ConversationsLogger.log("Duda por voz AI", childTranscript, botResponse);
 
-                VoiceEngine.speak(answer, () => {
-                    setTimeout(() => {
-                        const overlay = document.getElementById('doubt-voice-overlay');
-                        if (overlay && overlay.classList.contains('active')) {
-                            this.listenToVoiceDoubt();
-                        }
-                    }, 1500);
+                if (mascot) mascot.classList.add('talking');
+                VoiceEngine.speak(botResponse, () => {
+                    if (mascot) mascot.classList.remove('talking');
                 });
             }).catch(err => {
                 console.warn("Falla de Gemini en dudas, usando fallback local:", err);
-                this.respondToVoiceDoubtFallback(query, questionText);
+                statusText.innerText = "¡Qué gran pregunta, Eliu! Recuerda ser siempre honesto, bondadoso y estudiar mucho con tu lindo corazón. ¡Tú eres capaz de todo! 🌟";
+                VoiceEngine.speak(statusText.innerText);
             });
         } else {
-            this.respondToVoiceDoubtFallback(query, questionText);
+            statusText.innerText = "¡Qué gran pregunta, Eliu! Recuerda ser siempre honesto, bondadoso y estudiar mucho con tu lindo corazón. 🌟";
+            VoiceEngine.speak(statusText.innerText);
         }
     },
 
@@ -2121,7 +2052,9 @@ IMPORTANTE:
     },
 
     closeVoiceDoubt() {
-        SpeechRecognitionEngine.stop();
+        if (AudioRecordingEngine.isRecording) {
+            AudioRecordingEngine.cancel();
+        }
         VoiceEngine.stop();
         document.getElementById('doubt-voice-overlay').classList.remove('active');
         SoundManager.play('click');
@@ -2158,16 +2091,24 @@ IMPORTANTE:
 
         // Renderizar la tarjeta metacognitiva en la pantalla
         container.innerHTML = `
-            <div class="metacognitive-error-card">
+            <div class="metacognitive-error-card" style="text-align: center;">
                 <div class="metacognitive-emoji">🤔</div>
                 <div class="metacognitive-title">Casi lo tienes</div>
                 <div class="metacognitive-hint">${hint}</div>
                 
-                <div class="metacognitive-mic-status" id="meta-mic-status" style="font-weight: 700; color: #c53030;">
-                    <span>🎙️</span> Eliubot te escucha... ¿Qué respuesta elegiste y por qué?
+                <div class="metacognitive-mic-status" id="meta-mic-status" style="font-weight: 700; color: var(--color-ciencias); margin-bottom: 12px;">
+                    Presiona el micrófono y explícame por qué elegiste esa respuesta... 🎙️
                 </div>
                 
-                <button class="btn-activity-submit" style="width: 100%; background: linear-gradient(135deg, var(--color-ciencias) 0%, #2c3e50 100%);" id="btn-meta-retry">
+                <!-- Micrófono Glowing Metacognitivo -->
+                <div class="mic-glow-wrapper" id="meta-mic-container" style="position: relative; width: 60px; height: 60px; margin: 16px auto; cursor: pointer;">
+                    <div class="mic-glow" id="meta-mic-glow" style="width: 80px; height: 80px; border-radius: 40px; background: rgba(0, 240, 255, 0.2); position: absolute; top: -10px; left: -10px; z-index: 1; transition: all 0.3s;"></div>
+                    <button class="btn-call-mic" id="btn-meta-mic" style="position: relative; z-index: 2; cursor: pointer; border-radius: 50%; font-size: 28px; padding: 0; background: linear-gradient(135deg, #00f0ff 0%, #0077b6 100%); border: none; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 10px rgba(0, 240, 255, 0.4); transition: transform 0.2s;">
+                        🎙️
+                    </button>
+                </div>
+
+                <button class="btn-activity-submit" style="width: 100%; background: linear-gradient(135deg, var(--color-ciencias) 0%, #2c3e50 100%); margin-top: 12px;" id="btn-meta-retry">
                     Volver a intentar 🎯
                 </button>
             </div>
@@ -2175,41 +2116,94 @@ IMPORTANTE:
 
         // Preguntar por voz
         const queryText = `¡Casi lo tienes, Eliu! A ver, cuéntame, ¿cuál de las respuestas creías que era y por qué la elegiste?`;
-        VoiceEngine.speak(queryText, () => {
-            // Activar micrófono para escuchar su explicación
-            const statusEl = document.getElementById('meta-mic-status');
-            if (statusEl) {
-                statusEl.innerHTML = "<span>🎙️</span> ¡Háblale a tu micrófono ahora! Cuéntale a Eliubot...";
-                statusEl.style.color = "var(--color-ciencias)";
-            }
-            
-            SpeechRecognitionEngine.listen(
-                (explanationText) => {
-                    const statusEl2 = document.getElementById('meta-mic-status');
-                    if (statusEl2) {
-                        statusEl2.innerHTML = "<span>🤖</span> ¡Eliubot te está respondiendo!";
-                    }
-                    
-                    let spokenHint = `¡Entiendo lo que pensaste, Eliu! Pero te daré una pista secreta: ${hint.replace("💡 ", "")} ¡Inténtalo de nuevo!`;
-                    
-                    VoiceEngine.speak(spokenHint);
-                },
-                () => {
-                    setTimeout(() => {
-                        const btnRetry = document.getElementById('btn-meta-retry');
-                        const statusEl3 = document.getElementById('meta-mic-status');
-                        if (btnRetry && statusEl3) { 
-                            statusEl3.innerHTML = "<span>💡</span> Presiona abajo para reintentar";
-                        }
-                    }, 5000);
+        VoiceEngine.speak(queryText);
+
+        const metaMic = document.getElementById('btn-meta-mic');
+        const metaGlow = document.getElementById('meta-mic-glow');
+        const statusEl = document.getElementById('meta-mic-status');
+
+        if (metaMic) {
+            metaMic.onclick = () => {
+                SoundManager.play('click');
+                VoiceEngine.stop();
+
+                if (AudioRecordingEngine.isRecording) {
+                    if (metaMic) metaMic.classList.remove('listening');
+                    if (metaGlow) metaGlow.classList.remove('listening');
+                    if (statusEl) statusEl.innerText = "Pensando... 🤖";
+
+                    AudioRecordingEngine.stop((base64Audio, mimeType) => {
+                        let geminiKey = localStorage.getItem('eliu_aprende_gemini_key') || 'AIzaSyDiztJS8-qRAuDZO2Re83LF63Z5x-aIQTc';
+                        
+                        const systemPrompt = `Eres Eliubot, el tierno robot tutor de Eliu (6 años). Eliu acaba de cometer un error en una pregunta escolar de 1° Básico en Chile y está explicando su respuesta.
+Su explicación se ha grabado en audio.
+Transcribe su audio exactamente.
+Si Eliu responde con sinceridad o explica lo que pensó, elógialo muchísimo por su honestidad y esfuerzo (decir la verdad, no mentir y esforzarse son valores hermosos, Chase y Marshall están súper orgullosos de su noble corazón).
+Luego, dale una pista didáctica muy tierna, dulce y de apoyo basada en esta pista oficial: "${hint.replace("💡 ", "")}".
+Anímalo a reintentarlo y dile que equivocarse es parte del aprendizaje y que jugando con bloques construimos sabiduría.
+OBLIGATORIO: Pon su transcripción al principio entre corchetes, por ejemplo: "[Transcripción: elegí el tres porque conté mal]". Luego escribe tu respuesta amorosa.`;
+
+                        const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+                        const fetchResponse = async () => {
+                            for (const model of models) {
+                                try {
+                                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
+                                    const response = await fetch(url, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            contents: [{
+                                                role: "user",
+                                                parts: [
+                                                    { inlineData: { mimeType: mimeType || "audio/webm", data: base64Audio } },
+                                                    { text: "Escucha la explicación del error de Eliu y respóndele con amor y guía didáctica." }
+                                                ]
+                                            }],
+                                            systemInstruction: { parts: [{ text: systemPrompt }] },
+                                            generationConfig: { maxOutputTokens: 140, temperature: 0.6 }
+                                        })
+                                    });
+                                    if (response.ok) {
+                                        const data = await response.json();
+                                        const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                                        if (answer) return answer;
+                                    }
+                                } catch (e) {
+                                    console.error(e);
+                                }
+                            }
+                            return `[Transcripción: Explicación de Eliu] ¡Entiendo lo que pensaste, Eliu! Pero te daré una pista secreta: ${hint.replace("💡 ", "")} ¡Inténtalo de nuevo, tú puedes! 🌟`;
+                        };
+
+                        fetchResponse().then(answer => {
+                            const { childTranscript, botResponse } = parseGeminiAudioResponse(answer);
+                            if (statusEl) statusEl.innerText = botResponse;
+
+                            ConversationsLogger.log("Explicación de Error", childTranscript, botResponse);
+
+                            VoiceEngine.speak(botResponse);
+                        });
+                    });
+                } else {
+                    if (metaMic) metaMic.classList.add('listening');
+                    if (metaGlow) metaGlow.classList.add('listening');
+                    if (statusEl) statusEl.innerText = "🎙️ ¡Grabando explicación! Habla fuerte ahora...";
+
+                    AudioRecordingEngine.start(null, (err) => {
+                        if (metaMic) metaMic.classList.remove('listening');
+                        if (metaGlow) metaGlow.classList.remove('listening');
+                        if (statusEl) statusEl.innerText = "Error de micrófono.";
+                    });
                 }
-            );
-        });
+            };
+        }
 
         // Configurar botón Volver a intentar
         document.getElementById('btn-meta-retry').onclick = () => {
             SoundManager.play('click');
-            SpeechRecognitionEngine.stop();
+            if (AudioRecordingEngine.isRecording) {
+                AudioRecordingEngine.cancel();
+            }
             VoiceEngine.stop();
             // Restaurar pregunta
             this.renderQuizQuestion();
@@ -2374,33 +2368,74 @@ const HabitsManager = {
         const glow = document.getElementById('habits-mic-glow');
         const status = document.getElementById('habits-mic-status-text');
 
-        if (mic) mic.classList.add('listening');
-        if (glow) glow.classList.add('listening');
-        if (status) status.innerText = "🎙️ ¡Eliubot te está escuchando! Cuéntale qué pasó...";
+        if (AudioRecordingEngine.isRecording) {
+            if (mic) mic.classList.remove('listening');
+            if (glow) glow.classList.remove('listening');
+            if (status) status.innerText = "Pensando... 🤖";
 
-        SpeechRecognitionEngine.listen(
-            (transcript) => {
-                if (mic) mic.classList.remove('listening');
-                if (glow) glow.classList.remove('listening');
-                
-                const reply = `¡Entiendo perfectamente, Eliu! A veces pasa. Pero qué te parece si vamos juntos a hacerlo ahora? ¡Yo te acompaño!`;
-                if (status) status.innerText = `Dijiste: "${transcript}"`;
-                
-                document.getElementById('habits-speech-bubble').innerText = reply;
-                
-                // Log conversation
-                ConversationsLogger.log("Hábitos (No)", this.habits[this.currentIndex].speakPrompt + " -> Aún no", `Eliu explica: "${transcript}". Eliubot responde: "${reply}"`);
+            AudioRecordingEngine.stop((base64Audio, mimeType) => {
+                // Realizar una transcripción rápida con Gemini
+                let geminiKey = localStorage.getItem('eliu_aprende_gemini_key') || 'AIzaSyDiztJS8-qRAuDZO2Re83LF63Z5x-aIQTc';
 
-                VoiceEngine.speak(reply, () => {
-                    setTimeout(() => this.nextQuestion(), 1000);
+                const systemPrompt = "Transcribe exactamente el siguiente audio de un niño de 6 años explicando por qué no completó un hábito diario (como lavarse los dientes o bañarse). Solo devuelve la transcripción directa, sin comentarios adicionales ni introducciones.";
+                
+                const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+                const fetchTranscription = async () => {
+                    for (const model of models) {
+                        try {
+                            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    contents: [{
+                                        role: "user",
+                                        parts: [
+                                            { inlineData: { mimeType: mimeType || "audio/webm", data: base64Audio } },
+                                            { text: "Transcribe este audio de forma simple." }
+                                        ]
+                                    }],
+                                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                                    generationConfig: { maxOutputTokens: 80, temperature: 0.2 }
+                                })
+                            });
+                            if (response.ok) {
+                                const data = await response.json();
+                                const txt = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                                if (txt) return txt.trim();
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                    return "No se pudo transcribir el audio.";
+                };
+
+                fetchTranscription().then(transcript => {
+                    const reply = `¡Entiendo perfectamente, Eliu! A veces pasa. Pero qué te parece si vamos juntos a hacerlo ahora? ¡Yo te acompaño!`;
+                    if (status) status.innerText = `Explicaste: "${transcript}"`;
+                    
+                    document.getElementById('habits-speech-bubble').innerText = reply;
+                    
+                    // Log conversation
+                    ConversationsLogger.log("Hábitos (No)", this.habits[this.currentIndex].speakPrompt + " -> Aún no", `Eliu explica: "${transcript}". Eliubot responde: "${reply}"`);
+
+                    VoiceEngine.speak(reply, () => {
+                        setTimeout(() => this.nextQuestion(), 1000);
+                    });
                 });
-            },
-            () => {
+            });
+        } else {
+            if (mic) mic.classList.add('listening');
+            if (glow) glow.classList.add('listening');
+            if (status) status.innerText = "🎙️ ¡Te escucho, Eliu! Habla fuerte y vuelve a presionar para enviar...";
+            
+            AudioRecordingEngine.start(null, (err) => {
                 if (mic) mic.classList.remove('listening');
                 if (glow) glow.classList.remove('listening');
-                if (status) status.innerText = "Se acabó el tiempo. ¡Presiona el micrófono para hablar!";
-            }
-        );
+                if (status) status.innerText = "No pudimos iniciar el micrófono.";
+            });
+        }
     },
 
     nextQuestion() {
@@ -2410,36 +2445,149 @@ const HabitsManager = {
         if (this.currentIndex < this.habits.length) {
             this.showQuestion(this.currentIndex);
         } else {
-            // Completado de Hábitos del día!
-            const todayStr = new Date().toISOString().split('T')[0];
-            localStorage.setItem('eliu_aprende_habitos_fecha', todayStr);
-            
-            // Registrar en historial para el calendario del panel de padres
-            let history = [];
-            const savedHistory = localStorage.getItem('eliu_aprende_habitos_historial');
-            if (savedHistory) {
-                try { history = JSON.parse(savedHistory); } catch(e) {}
-            }
-            // Evitar duplicados del mismo día
-            history = history.filter(h => h.fecha !== todayStr);
-            history.unshift({
-                fecha: todayStr,
-                checks: this.results
-            });
-            localStorage.setItem('eliu_aprende_habitos_historial', JSON.stringify(history.slice(0, 30))); // guardar últimos 30 días
-
-            // Recompensar estrellas
-            Gamification.awardStars(30);
-            
-            document.getElementById('habits-question-box').style.display = 'none';
-            document.getElementById('habits-congrat-box').style.display = 'block';
-
-            const finishGreeting = `¡Espectacular, Eliu! ¡Has completado todos tus hábitos del día! Has ganado 30 estrellas súper doradas. ¡Ahora estás listo para entrar al mapa de tus islas y aprender! 🚀🏆`;
-            document.getElementById('habits-speech-bubble').innerText = finishGreeting;
-
-            SoundManager.play('success');
-            VoiceEngine.speak(finishGreeting);
+            // Ir a la fase de Promesa del Día de Valores!
+            this.startPromisePhase();
         }
+    },
+
+    startPromisePhase() {
+        document.getElementById('habits-question-box').style.display = 'none';
+        document.getElementById('habits-promise-box').style.display = 'block';
+
+        const status = document.getElementById('promise-mic-status-text');
+        if (status) status.innerText = "🎙️ Presiona el micrófono y di tu promesa en voz alta...";
+
+        const promptText = `¡Qué gran mañana de súper hábitos, Eliu! Para tener un día maravilloso, hagamos nuestra promesa de valores de hoy. Presiona mi micrófono azul de abajo y repite conmigo fuerte: "Prometo decir siempre la verdad, ser súper bondadoso con todos, y dar lo mejor de mí para aprender hoy." ¡Te escucho con amor!`;
+        document.getElementById('habits-speech-bubble').innerText = promptText;
+
+        const mascot = document.getElementById('habits-mascot-avatar');
+        if (mascot) mascot.classList.add('talking');
+
+        VoiceEngine.speak(promptText, () => {
+            if (mascot) mascot.classList.remove('talking');
+            
+            // Iniciar el listener de la Promesa Diaria
+            const pMic = document.getElementById('btn-promise-mic');
+            const pGlow = document.getElementById('promise-mic-glow');
+            const skipBtn = document.getElementById('btn-promise-skip');
+
+            if (pMic) {
+                pMic.onclick = () => {
+                    SoundManager.play('click');
+                    VoiceEngine.stop();
+
+                    if (AudioRecordingEngine.isRecording) {
+                        if (pMic) pMic.classList.remove('listening');
+                        if (pGlow) pGlow.classList.remove('listening');
+                        if (status) status.innerText = "Pensando... 🤖";
+
+                        AudioRecordingEngine.stop((base64Audio, mimeType) => {
+                            // Enviar a Gemini para transcribir y validar moralmente
+                            let geminiKey = localStorage.getItem('eliu_aprende_gemini_key') || 'AIzaSyDiztJS8-qRAuDZO2Re83LF63Z5x-aIQTc';
+                            
+                            const systemPrompt = `Eres Eliubot, el tierno robot tutor. Eliu acaba de grabar su Promesa Diaria de Valores (prometo decir la verdad, ser bondadoso y estudiar). 
+Transcribe su audio exactamente.
+Si Eliu hizo la promesa (o habló con cariño), elógialo con extrema dulzura y dile que tiene un corazón gigante y que Marshall y Chase están orgullosos de él.
+OBLIGATORIO: Pon su transcripción al principio entre corchetes, por ejemplo: "[Transcripción: prometo decir la verdad y ser bueno]". Luego escribe tu felicitación amorosa.`;
+
+                            const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+                            const fetchPledge = async () => {
+                                for (const model of models) {
+                                    try {
+                                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
+                                        const response = await fetch(url, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                contents: [{
+                                                    role: "user",
+                                                    parts: [
+                                                        { inlineData: { mimeType: mimeType || "audio/webm", data: base64Audio } },
+                                                        { text: "Procesa y felicita la promesa de valores de Eliu." }
+                                                    ]
+                                                }],
+                                                systemInstruction: { parts: [{ text: systemPrompt }] },
+                                                generationConfig: { maxOutputTokens: 120, temperature: 0.5 }
+                                            })
+                                        });
+                                        if (response.ok) {
+                                            const data = await response.json();
+                                            const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                                            if (answer) return answer;
+                                        }
+                                    } catch (e) {
+                                        console.error(e);
+                                    }
+                                }
+                                return "[Transcripción: Promesa hecha] ¡Increíble promesa, Eliu! Tu corazón es gigante. 💖";
+                            };
+
+                            fetchPledge().then(answer => {
+                                const { childTranscript, botResponse } = parseGeminiAudioResponse(answer);
+                                if (status) status.innerText = botResponse;
+
+                                // Guardar en bitácora de padres
+                                ConversationsLogger.log("Promesa Diaria", childTranscript, botResponse);
+
+                                document.getElementById('habits-speech-bubble').innerText = botResponse;
+
+                                if (mascot) mascot.classList.add('talking');
+                                VoiceEngine.speak(botResponse, () => {
+                                    if (mascot) mascot.classList.remove('talking');
+                                    this.finishHabitsCongrat();
+                                });
+                            });
+                        });
+                    } else {
+                        if (pMic) pMic.classList.add('listening');
+                        if (pGlow) pGlow.classList.add('listening');
+                        if (status) status.innerText = "🎙️ ¡Grabando promesa! Habla fuerte ahora...";
+                        
+                        AudioRecordingEngine.start(null, (err) => {
+                            if (pMic) pMic.classList.remove('listening');
+                            if (pGlow) pGlow.classList.remove('listening');
+                            if (status) status.innerText = "Error de micrófono.";
+                        });
+                    }
+                };
+            }
+
+            if (skipBtn) {
+                skipBtn.onclick = () => {
+                    SoundManager.play('click');
+                    AudioRecordingEngine.cancel();
+                    this.finishHabitsCongrat();
+                };
+            }
+        });
+    },
+
+    finishHabitsCongrat() {
+        document.getElementById('habits-promise-box').style.display = 'none';
+        document.getElementById('habits-congrat-box').style.display = 'block';
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        localStorage.setItem('eliu_aprende_habitos_fecha', todayStr);
+        
+        let history = [];
+        const savedHistory = localStorage.getItem('eliu_aprende_habitos_historial');
+        if (savedHistory) {
+            try { history = JSON.parse(savedHistory); } catch(e) {}
+        }
+        history = history.filter(h => h.fecha !== todayStr);
+        history.unshift({
+            fecha: todayStr,
+            checks: this.results
+        });
+        localStorage.setItem('eliu_aprende_habitos_historial', JSON.stringify(history.slice(0, 30)));
+
+        Gamification.awardStars(30);
+
+        const finishGreeting = `¡Espectacular, Eliu! Has completado tus hábitos y tu promesa del día. Has ganado +30⭐ súper doradas. ¡Ahora estás listo para aprender en tus hermosas islas! 🚀🏆`;
+        document.getElementById('habits-speech-bubble').innerText = finishGreeting;
+
+        SoundManager.play('success');
+        VoiceEngine.speak(finishGreeting);
     }
 };
 

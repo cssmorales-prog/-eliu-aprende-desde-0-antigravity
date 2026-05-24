@@ -1010,15 +1010,19 @@ const ParentDashboard = {
     },
 
     // 🔊 POPULAR LAS VOCES EN ESPAÑOL DISPONIBLES EN EL NAVEGADOR
-    populateSystemVoices() {
+    populateSystemVoices(retryCount = 0) {
         const selector = document.getElementById('voice-system-selector');
         if (!selector || !window.speechSynthesis) return;
 
         let voices = window.speechSynthesis.getVoices();
         
-        // Si la lista de voces está vacía, reintentar en 250ms (Soluciona la carga asíncrona en Chrome/Edge)
+        // Si la lista de voces está vacía, reintentar en 250ms con límite de 10 veces (Soluciona la carga asíncrona en Chrome/Edge sin bucle infinito)
         if (voices.length === 0) {
-            setTimeout(() => this.populateSystemVoices(), 250);
+            if (retryCount < 10) {
+                setTimeout(() => this.populateSystemVoices(retryCount + 1), 250);
+            } else {
+                selector.innerHTML = '<option value="">No se detectaron voces en el sistema</option>';
+            }
             return;
         }
 

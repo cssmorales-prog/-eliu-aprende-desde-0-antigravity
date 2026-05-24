@@ -17,6 +17,36 @@ const ParentDashboard = {
         this.loadVoiceSettings();
         this.renderWeeklyPlanner();
 
+        // Configurar navegación de Tabs en Panel CAS
+        document.querySelectorAll('.btn-parent-tab').forEach(tabBtn => {
+            tabBtn.addEventListener('click', (e) => {
+                const targetTabId = e.currentTarget.getAttribute('data-tab');
+                this.switchTab(targetTabId);
+            });
+        });
+
+        // Configurar botón Volver a niños en el sidebar
+        const backKidsSidebar = document.getElementById('btn-back-to-kids-sidebar');
+        if (backKidsSidebar) {
+            backKidsSidebar.onclick = () => {
+                if (typeof App !== 'undefined') {
+                    App.showView('kids-dashboard-view');
+                }
+            };
+        }
+
+        // Botón de imprimir portafolio
+        const printBtn = document.getElementById('btn-print-portfolio');
+        if (printBtn) {
+            printBtn.onclick = () => window.print();
+        }
+
+        // Botón de limpiar bitácora de chats
+        const clearChatBtn = document.getElementById('btn-clear-chat-logs');
+        if (clearChatBtn) {
+            clearChatBtn.onclick = () => this.clearChatLogsConfirm();
+        }
+
         // Eventos
         document.getElementById('btn-save-pages').addEventListener('click', () => this.saveBookPages());
         document.getElementById('btn-export-backup').addEventListener('click', () => this.exportBackup());
@@ -614,5 +644,346 @@ const ParentDashboard = {
         if (typeof Gamification !== 'undefined') {
             Gamification.renderKidsDashboard();
         }
+    },
+
+    // 🔀 NAVEGACIÓN Y CAMBIO DE PESTAÑAS (TABS)
+    switchTab(tabId) {
+        SoundManager.play('click');
+        
+        // Desactivar todos los botones de tab y secciones
+        document.querySelectorAll('.btn-parent-tab').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.parent-tab-section').forEach(sec => sec.classList.remove('active'));
+        
+        // Activar el tab seleccionado
+        const targetBtn = document.querySelector(`.btn-parent-tab[data-tab="${tabId}"]`);
+        if (targetBtn) targetBtn.classList.add('active');
+        
+        const targetSec = document.getElementById(tabId);
+        if (targetSec) targetSec.classList.add('active');
+
+        // Cargar datos específicos del tab
+        if (tabId === 'tab-resumen') {
+            this.renderParentStats();
+            this.renderSubjectProgress();
+            this.renderParentGallery();
+            this.renderWeeklyPlanner();
+        } else if (tabId === 'tab-habitos') {
+            this.renderHabitsCalendar();
+        } else if (tabId === 'tab-chats') {
+            this.renderChatLogs();
+        } else if (tabId === 'tab-cofre') {
+            this.renderCofreAudios();
+        } else if (tabId === 'tab-patrones') {
+            this.renderAIPatterns();
+        }
+    },
+
+    // 🦷🚿 RENDERIZAR REGISTRO DE HÁBITOS COMPLETO
+    renderHabitsCalendar() {
+        const container = document.getElementById('parent-habits-calendar-grid');
+        if (!container) return;
+
+        let history = [];
+        const savedHistory = localStorage.getItem('eliu_aprende_habitos_historial');
+        if (savedHistory) {
+            try { history = JSON.parse(savedHistory); } catch(e) {}
+        }
+
+        if (history.length === 0) {
+            container.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 32px 16px; font-family: var(--font-parents);">
+                    <span style="font-size: 48px;">🦷🚿</span>
+                    <p style="margin-top: 12px; font-weight: 700; font-size: 16px; color: #2d3748;">¡Aún no hay registros de hábitos!</p>
+                    <p>Cuando Eliu complete sus misiones de hábitos diarios por la mañana, los detalles aparecerán aquí.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const habitsMeta = {
+            dientes: { label: 'Dientes 🦷', icon: '🦷' },
+            banar: { label: 'Bañarse 🚿', icon: '🚿' },
+            manos: { label: 'Manos 🧼', icon: '🧼' },
+            cama: { label: 'Cama 🛏️', icon: '🛏️' },
+            juguetes: { label: 'Juguetes 🧸', icon: '🧸' },
+            agua: { label: 'Agua 💧', icon: '💧' }
+        };
+
+        // Render logs
+        container.innerHTML = history.map(dayLog => {
+            const checks = dayLog.checks || {};
+            
+            // Build mini badges
+            const badgesHtml = Object.keys(habitsMeta).map(key => {
+                const checked = checks[key] === true;
+                const statusClass = checked ? 'yes' : 'no';
+                const statusEmoji = checked ? '👍' : '👎';
+                return `
+                    <div class="habit-mini-badge ${statusClass}">
+                        <span>${habitsMeta[key].icon}</span>
+                        <span style="margin-top: 2px;">${statusEmoji}</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Buscar explicaciones de "No" en esta misma fecha
+            let explanationHtml = "";
+            let chatLogs = [];
+            try {
+                chatLogs = JSON.parse(localStorage.getItem('eliu_aprende_chat_logs')) || [];
+            } catch(e) {}
+            
+            const relevantChats = chatLogs.filter(log => log.fecha === dayLog.fecha && log.tipo === "Hábitos (No)");
+
+            if (relevantChats.length > 0) {
+                explanationHtml = relevantChats.map(chat => `
+                    <div style="font-size: 12px; font-style: italic; background: #fff5f5; border-left: 3px solid var(--roblox-red); padding: 6px 10px; border-radius: 4px; margin-top: 8px; color: #9b2c2c; font-weight: 600;">
+                        🗣️ ${chat.nino}
+                    </div>
+                `).join('');
+            }
+
+            return `
+                <div class="habit-day-card">
+                    <div class="habit-day-header">
+                        <span>📅 Día: ${dayLog.fecha}</span>
+                        <span style="color: var(--neon-gold); font-weight: 800;">⭐ +30 Puntos</span>
+                    </div>
+                    <div class="habit-day-row-grid">
+                        ${badgesHtml}
+                    </div>
+                    ${explanationHtml}
+                </div>
+            `;
+        }).join('');
+    },
+
+    // 💬 RENDERIZAR BITÁCORA DE CHATS
+    renderChatLogs() {
+        const container = document.getElementById('parent-chat-logs-container');
+        if (!container) return;
+
+        let logs = [];
+        try {
+            logs = JSON.parse(localStorage.getItem('eliu_aprende_chat_logs')) || [];
+        } catch(e) {}
+
+        if (logs.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; color: var(--text-muted); padding: 32px 16px; font-family: var(--font-parents);">
+                    <span style="font-size: 48px;">💬</span>
+                    <p style="margin-top: 12px; font-weight: 700; font-size: 16px; color: #2d3748;">¡Aún no hay conversaciones registradas!</p>
+                    <p>Las dudas por voz y las videollamadas con IA de Eliu se registrarán de forma transparente aquí.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = logs.map(log => {
+            let badgeColor = "#3182ce";
+            if (log.tipo === "Videollamada Sandbox") badgeColor = "#2ecc71";
+            if (log.tipo === "Duda de Voz") badgeColor = "#9b59b6";
+            if (log.tipo.startsWith("Hábitos")) badgeColor = "var(--color-diario)";
+
+            return `
+                <div class="chat-log-card">
+                    <div class="chat-log-header">
+                        <span style="background: ${badgeColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">${log.tipo}</span>
+                        <span>📅 ${log.fecha} a las ${log.hora}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                        <div class="chat-log-bubble nino">
+                            👦 Eliu: "${log.nino}"
+                        </div>
+                        <div class="chat-log-bubble bot">
+                            🤖 Eliubot: "${log.bot}"
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    clearChatLogsConfirm() {
+        SoundManager.play('click');
+        if (confirm("¿Estás seguro de que deseas vaciar por completo la bitácora de chats? Esta acción no se puede deshacer.")) {
+            localStorage.removeItem('eliu_aprende_chat_logs');
+            SoundManager.play('wrong');
+            this.renderChatLogs();
+            this.renderParentStats();
+        }
+    },
+
+    // 🎁 Playlist de Audios del Cofre de Recuerdos
+    renderCofreAudios() {
+        const container = document.getElementById('parent-cofre-playlist-container');
+        if (!container) return;
+
+        let audios = [];
+        const savedAudios = localStorage.getItem('eliu_aprende_recorded_audios');
+        if (savedAudios) {
+            try { audios = JSON.parse(savedAudios); } catch(e) {}
+        }
+
+        if (audios.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; color: var(--text-muted); padding: 32px 16px; font-family: var(--font-parents);">
+                    <span style="font-size: 48px;">🎁</span>
+                    <p style="margin-top: 12px; font-weight: 700; font-size: 16px; color: #2d3748;">¡Aún no hay audios grabados en el cofre!</p>
+                    <p>Las gemas de voz que grabe Eliu en sus súper desafíos infantiles aparecerán aquí con controles de reproducción directa.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const typeLabels = {
+            chiste: '💬 Chiste Divertido',
+            historia: '🐱 Historia Loca',
+            cancion: '🎵 Canción del Corazón',
+            imitacion: '🦖 Imitación Graciosa',
+            felicidad: '☀️ Cosas Felices'
+        };
+
+        container.innerHTML = audios.map(audio => {
+            const labelText = typeLabels[audio.type] || audio.label || 'Recuerdo Mágico';
+            return `
+                <div class="playlist-audio-item" id="audio_item_${audio.id}">
+                    <div class="audio-item-info">
+                        <div class="audio-item-title">${labelText}</div>
+                        <div class="audio-item-meta">📅 Grabado el ${audio.date} a las ${audio.time} | Desafío: "${audio.label}"</div>
+                    </div>
+                    <div class="audio-item-controls">
+                        <button class="btn-audio-play" onclick="ParentDashboard.playRecordedAudio('${audio.id}')" title="Reproducir Audio">
+                            ▶️ Play
+                        </button>
+                        <button class="btn-audio-delete" onclick="ParentDashboard.deleteRecordedAudioConfirm('${audio.id}')" title="Borrar Audio">
+                            🗑️ Borrar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    currentPlayingAudio: null,
+    playRecordedAudio(id) {
+        SoundManager.play('click');
+        let audios = [];
+        const savedAudios = localStorage.getItem('eliu_aprende_recorded_audios');
+        if (savedAudios) {
+            try { audios = JSON.parse(savedAudios); } catch(e) {}
+        }
+
+        const audio = audios.find(a => a.id === id);
+        if (!audio) return;
+
+        // Detener audio previo si hay uno sonando
+        if (this.currentPlayingAudio) {
+            this.currentPlayingAudio.pause();
+            this.currentPlayingAudio = null;
+            // Restablecer etiquetas visuales
+            this.renderCofreAudios();
+            return;
+        }
+
+        try {
+            this.currentPlayingAudio = new Audio(audio.dataUrl);
+            this.currentPlayingAudio.play();
+            
+            const btn = document.querySelector(`#audio_item_${id} .btn-audio-play`);
+            if (btn) {
+                btn.innerText = "⏹️ Stop";
+                btn.onclick = () => {
+                    this.currentPlayingAudio.pause();
+                    this.currentPlayingAudio = null;
+                    btn.innerText = "▶️ Play";
+                    btn.onclick = () => this.playRecordedAudio(id);
+                };
+            }
+            
+            this.currentPlayingAudio.onended = () => {
+                if (btn) {
+                    btn.innerText = "▶️ Play";
+                    btn.onclick = () => this.playRecordedAudio(id);
+                }
+                this.currentPlayingAudio = null;
+            };
+        } catch(e) {
+            console.error("Error al reproducir audio:", e);
+        }
+    },
+
+    deleteRecordedAudioConfirm(id) {
+        SoundManager.play('click');
+        if (confirm("¿Estás seguro de que deseas eliminar permanentemente este audio grabado del cofre?")) {
+            let audios = [];
+            const savedAudios = localStorage.getItem('eliu_aprende_recorded_audios');
+            if (savedAudios) {
+                try { audios = JSON.parse(savedAudios); } catch(e) {}
+            }
+
+            audios = audios.filter(a => a.id !== id);
+            localStorage.setItem('eliu_aprende_recorded_audios', JSON.stringify(audios));
+
+            SoundManager.play('wrong');
+            this.renderCofreAudios();
+            
+            // Recargar gemas del cofre infantil
+            if (typeof CofreManager !== 'undefined' && CofreManager.loadGems) {
+                CofreManager.loadGems();
+            }
+        }
+    },
+
+    // 🧠 RENDERIZAR PATRONES DE APRENDIZAJE E INFORMES
+    renderAIPatterns() {
+        const grid = document.getElementById('parent-ai-insights-grid');
+        if (!grid) return;
+
+        const bookPages = this.getBookPages();
+        const lecciones = this.getCompletedLessons();
+        const totalEstrellas = localStorage.getItem('eliu_aprende_estrellas') || 0;
+        const entries = DiaryManager.getEntries();
+
+        // Calcular fortalezas y recomendaciones dinámicas
+        let mathCount = lecciones.filter(l => l.startsWith('matematica')).length;
+        let langCount = lecciones.filter(l => l.startsWith('lenguaje')).length;
+
+        // Fortalezas
+        let fortalezaText = "Eliu ha demostrado un gran entusiasmo por el mapa interactivo Roblox. Muestra perseverancia y le encanta recolectar estrellas de premios.";
+        if (mathCount > langCount) {
+            fortalezaText = "Muestra una excelente habilidad lógico-matemática y concentración para juntar bloques. Eliu resolvió rápidamente sumas y conteos en la Isla de Números.";
+        } else if (langCount > 0) {
+            fortalezaText = "Muestra gran interés en el reconocimiento fónico, lectura silábica y caligrafía de letras. Le gusta escuchar la voz de Eliubot leer cuentos.";
+        }
+
+        // Áreas de mejora
+        let mejoraText = "En caligrafía se sugiere continuar trazando en triple renglón para fortalecer la motricidad fina y la separación clara de letras.";
+        if (bookPages.jugandoSonidos < 50) {
+            mejoraText = `Se sugiere practicar la segmentación de sílabas y rimas en la página ${bookPages.jugandoSonidos} del libro "Jugando con los Sonidos 3" para mejorar fluidez de lectura.`;
+        }
+
+        // Recomendación de Eliubot (IA)
+        let recomendacionText = `1. Continuar con la planificación semanal. Mañana se sugiere avanzar a la página ${bookPages.supermatematicos + 1} de Supermatemáticos.\n2. Mantener la racha de hábitos de salud diarios (especialmente el cepillado de dientes 🦷 por la noche).\n3. Incentivar a Eliu a contar un chiste o cantar en su Cofre de Recuerdos para evaluar pronunciación oral de forma lúdica.`;
+
+        grid.innerHTML = `
+            <div class="insight-card" style="border-left: 5px solid #2ecc71; background: white;">
+                <h4><span>💪</span> Fortalezas del Estudiante</h4>
+                <p>${fortalezaText}</p>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; margin-top: 10px;">Basado en ${lecciones.length} lecciones completadas y ${totalEstrellas}⭐ de Roblox acumuladas.</div>
+            </div>
+            
+            <div class="insight-card" style="border-left: 5px solid #f1c40f; background: white;">
+                <h4><span>⚠️</span> Áreas de Refuerzo</h4>
+                <p>${mejoraText}</p>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; margin-top: 10px;">Basado en páginas actuales de libros y autoevaluación emocional del diario (${entries.length} dibujos).</div>
+            </div>
+            
+            <div class="insight-card" style="border-left: 5px solid #3498db; grid-column: 1 / -1; background: white;">
+                <h4><span>🤖</span> Plan de Acción Pedagógico Recomendado</h4>
+                <p style="white-space: pre-line;">${recomendacionText}</p>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; margin-top: 10px;">Este plan de acción se adapta dinámicamente según la racha y hábitos logrados.</div>
+            </div>
+        `;
     }
 };

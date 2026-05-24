@@ -296,21 +296,23 @@ const SpeechRecognitionEngine = {
         this.listenId++;
         const currentListenId = this.listenId;
         
+        let hasResult = false;
         this.active = true;
         this.recognition.onresult = (event) => {
             if (currentListenId !== this.listenId) return;
             const text = event.results[0][0].transcript;
+            hasResult = true;
             onResult(text);
         };
         this.recognition.onend = () => {
             if (currentListenId !== this.listenId) return;
             this.active = false;
-            if (onEnd) onEnd();
+            if (onEnd && !hasResult) onEnd();
         };
         this.recognition.onerror = () => {
             if (currentListenId !== this.listenId) return;
             this.active = false;
-            if (onEnd) onEnd();
+            if (onEnd && !hasResult) onEnd();
         };
         
         try {
@@ -1220,6 +1222,9 @@ IMPORTANTE:
                     this.chatHistory = this.chatHistory.slice(this.chatHistory.length - 10);
                 }
 
+                // Guardar en la bitácora
+                ConversationsLogger.log("Videollamada AI", transcript, answer);
+
                 VoiceEngine.speak(answer, () => {
                     setTimeout(() => {
                         this.listenSandboxLoop();
@@ -1227,14 +1232,14 @@ IMPORTANTE:
                 });
             }).catch(err => {
                 console.warn("Falla de Gemini, usando fallback local:", err);
-                this.processSandboxSpeechFallback(query);
+                this.processSandboxSpeechFallback(query, transcript);
             });
         } else {
-            this.processSandboxSpeechFallback(query);
+            this.processSandboxSpeechFallback(query, transcript);
         }
     },
 
-    processSandboxSpeechFallback(query) {
+    processSandboxSpeechFallback(query, originalText) {
         const overlayText = document.getElementById('speech-overlay-text');
         let answer = "¡Guau, Eliu! Qué asombroso lo que me cuentas. Marshall y yo estamos muy felices de conversar contigo. ¡Háblame más sobre tus juegos preferidos o tus materias de estudio!";
 
@@ -1262,6 +1267,9 @@ IMPORTANTE:
 
         if (overlayText) overlayText.innerText = answer;
         
+        // Guardar en la bitácora
+        ConversationsLogger.log("Videollamada Local", originalText || query, answer);
+
         VoiceEngine.speak(answer, () => {
             setTimeout(() => {
                 this.listenSandboxLoop();
@@ -1325,6 +1333,16 @@ const App = {
             this.showView('diary-view');
         });
         document.getElementById('btn-to-stickers').addEventListener('click', () => this.showView('stickers-view'));
+        
+        // Inicializar Cofre de Recuerdos
+        CofreManager.init();
+        const toCofreBtn = document.getElementById('btn-to-cofre');
+        if (toCofreBtn) {
+            toCofreBtn.addEventListener('click', () => {
+                this.showView('cofre-view');
+                CofreManager.loadGems();
+            });
+        }
         
         // Botones Volver
         document.querySelectorAll('.btn-back-home').forEach(btn => {
@@ -2028,6 +2046,9 @@ IMPORTANTE:
 
             fetchResponse().then(answer => {
                 statusText.innerText = answer;
+                // Registrar log
+                ConversationsLogger.log("Duda por voz AI", questionText, answer);
+
                 VoiceEngine.speak(answer, () => {
                     setTimeout(() => {
                         const overlay = document.getElementById('doubt-voice-overlay');
@@ -2038,14 +2059,14 @@ IMPORTANTE:
                 });
             }).catch(err => {
                 console.warn("Falla de Gemini en dudas, usando fallback local:", err);
-                this.respondToVoiceDoubtFallback(query);
+                this.respondToVoiceDoubtFallback(query, questionText);
             });
         } else {
-            this.respondToVoiceDoubtFallback(query);
+            this.respondToVoiceDoubtFallback(query, questionText);
         }
     },
 
-    respondToVoiceDoubtFallback(query) {
+    respondToVoiceDoubtFallback(query, originalText) {
         const statusText = document.getElementById('doubt-status-text');
         let answer = "¡Qué gran pregunta, Eliu! Me encanta tu curiosidad. Recuerda que puedes preguntarme sobre las sílabas de lenguaje, las sumas de matemáticas, tus 5 sentidos, caligrafía, o sobre nuestro hermoso país Chile. ¡Tú eres un campeón, dime qué más quieres saber!";
         
@@ -2069,6 +2090,10 @@ IMPORTANTE:
         }
 
         statusText.innerText = answer;
+        
+        // Registrar log
+        ConversationsLogger.log("Duda por voz Local", originalText || query, answer);
+
         VoiceEngine.speak(answer, () => {
             setTimeout(() => {
                 const overlay = document.getElementById('doubt-voice-overlay');
@@ -2176,7 +2201,567 @@ IMPORTANTE:
     }
 };
 
+// 💬 REGISTRO AUTOMÁTICO DE CONVERSACIONES CON ELIUBOT
+const ConversationsLogger = {
+    log(type, childText, botText) {
+        try {
+            const logs = JSON.parse(localStorage.getItem('eliu_aprende_chat_logs')) || [];
+            const newLog = {
+                id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                fecha: new Date().toLocaleDateString('es-CL'),
+                hora: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
+                tipo: type,
+                nino: childText,
+                bot: botText
+            };
+            logs.unshift(newLog);
+            localStorage.setItem('eliu_aprende_chat_logs', JSON.stringify(logs.slice(0, 100))); // Guardar últimas 100
+        } catch (e) {
+            console.error("Error al registrar conversación:", e);
+        }
+    },
+    getLogs() {
+        try {
+            return JSON.parse(localStorage.getItem('eliu_aprende_chat_logs')) || [];
+        } catch (e) {
+            return [];
+        }
+    },
+    clearLogs() {
+        localStorage.removeItem('eliu_aprende_chat_logs');
+    }
+};
+
+// 🦷🚿 GESTOR DE HÁBITOS DIARIOS DE AUTOCUIDADO (CHECK-IN)
+const HabitsManager = {
+    currentIndex: 0,
+    results: {},
+    habits: [
+        { key: 'dientes', emoji: '🦷', text: '¿Te lavaste los dientes hoy, Eliu? 🦷', speakPrompt: '¿Te lavaste los dientes hoy, Eliu?', consequence: '¿Sabías que si no te lavas los dientes, los bichitos del azúcar hacen una gran fiesta en tu boca por la noche y te pueden causar caries? 🦷🦠' },
+        { key: 'banar', emoji: '🚿', text: '¿Te bañaste hoy, Eliu? 🚿', speakPrompt: '¿Te bañaste hoy, Eliu?', consequence: '¿Sabías que un buen baño calentito nos quita las bacterias y nos llena de súper energía para seguir construyendo en Roblox? 🚿🧼' },
+        { key: 'manos', emoji: '🧼', text: '¿Lavaste tus manos antes de comer? 🧼', speakPrompt: '¿Lavaste tus manos antes de comer?', consequence: '¿Sabías que las manitos sucias llevan bichitos invisibles a tu pancita? ¡Lavarlas con agua y jabón te mantiene fuerte! 🧼🦠' },
+        { key: 'cama', emoji: '🛏️', text: '¿Hiciste tu cama hoy? 🛏️', speakPrompt: '¿Hiciste tu cama hoy?', consequence: '¿Sabías que hacer tu cama es la primera súper misión del día? ¡Tener tu pieza ordenada hace que tu mente esté clara y lista para jugar! 🛏️✨' },
+        { key: 'juguetes', emoji: '🧸', text: '¿Ordenaste tus juguetes, Eliu? 🧸', speakPrompt: '¿Ordenaste tus juguetes, Eliu?', consequence: '¿Sabías que ordenar tus juguetes hace que tus cachorros de Paw Patrol tengan una estación limpia para sus rescates? 🧸🚒' },
+        { key: 'agua', emoji: '💧', text: '¿Tomaste agua hoy? 💧', speakPrompt: '¿Tomaste agua hoy?', consequence: '¿Sabías que tu cuerpo es como un motor de cohete que necesita agua limpia para hidratarse y volar muy alto? 💧🚀' }
+    ],
+
+    init() {
+        document.getElementById('btn-habit-yes').onclick = () => this.answer(true);
+        document.getElementById('btn-habit-no').onclick = () => this.answer(false);
+        document.getElementById('btn-habit-finish').onclick = () => {
+            SoundManager.play('click');
+            App.showView('kids-dashboard-view');
+        };
+
+        const skipBtn = document.getElementById('btn-habit-skip-mic');
+        if (skipBtn) {
+            skipBtn.onclick = () => {
+                SoundManager.play('click');
+                SpeechRecognitionEngine.stop();
+                VoiceEngine.stop();
+                this.nextQuestion();
+            };
+        }
+
+        const habitsMic = document.getElementById('btn-habit-mic');
+        if (habitsMic) {
+            habitsMic.onclick = () => {
+                SoundManager.play('click');
+                VoiceEngine.stop();
+                SpeechRecognitionEngine.stop();
+                this.listenToHabitExplanation();
+            };
+        }
+    },
+
+    startCheckin() {
+        this.init();
+        
+        const todayStr = new Date().toISOString().split('T')[0];
+        const lastHabitsDate = localStorage.getItem('eliu_aprende_habitos_fecha');
+        
+        if (lastHabitsDate === todayStr) {
+            App.showView('kids-dashboard-view');
+            return;
+        }
+
+        this.currentIndex = 0;
+        this.results = {};
+        
+        document.getElementById('habits-congrat-box').style.display = 'none';
+        document.getElementById('habits-question-box').style.display = 'block';
+        document.getElementById('habits-mic-container').style.display = 'none';
+
+        App.showView('habits-view');
+        this.showQuestion(0);
+    },
+
+    showQuestion(idx) {
+        const habit = this.habits[idx];
+        const percent = Math.round((idx / this.habits.length) * 100);
+        
+        document.getElementById('habits-progress-label').innerText = `Misión ${idx + 1} de ${this.habits.length}`;
+        document.getElementById('habits-progress-percent').innerText = `${percent}%`;
+        document.getElementById('habits-progress-fill').style.width = `${percent}%`;
+
+        document.getElementById('habits-question-emoji').innerText = habit.emoji;
+        document.getElementById('habits-question-text').innerText = habit.text;
+
+        const greeting = `¡Misión de hábitos, Eliu! ${habit.speakPrompt}`;
+        document.getElementById('habits-speech-bubble').innerText = greeting;
+
+        // Animar avatar
+        const mascot = document.getElementById('habits-mascot-avatar');
+        if (mascot) mascot.classList.add('talking');
+
+        VoiceEngine.speak(greeting, () => {
+            if (mascot) mascot.classList.remove('talking');
+        });
+    },
+
+    answer(yesNo) {
+        const habit = this.habits[this.currentIndex];
+        this.results[habit.key] = yesNo;
+
+        // Ocultar botones de respuesta temporalmente
+        document.getElementById('btn-habit-yes').style.disabled = true;
+        document.getElementById('btn-habit-no').style.disabled = true;
+
+        if (yesNo === true) {
+            SoundManager.play('success');
+            const response = `¡Excelente, Eliu! ¡Qué gran súper hábito! Tienes una estrella dorada más en tu salud hoy. ⭐`;
+            document.getElementById('habits-speech-bubble').innerText = response;
+            
+            VoiceEngine.speak(response, () => {
+                document.getElementById('btn-habit-yes').style.disabled = false;
+                document.getElementById('btn-habit-no').style.disabled = false;
+                this.nextQuestion();
+            });
+        } else {
+            SoundManager.play('wrong');
+            const response = `${habit.consequence} Eliu, cuéntame, ¿qué pasó hoy? ¿Estabas muy cansado, jugando o algo más? 🎙️`;
+            document.getElementById('habits-speech-bubble').innerText = response;
+            
+            VoiceEngine.speak(response, () => {
+                document.getElementById('btn-habit-yes').style.disabled = false;
+                document.getElementById('btn-habit-no').style.disabled = false;
+                
+                // Mostrar micrófono para escuchar su explicación
+                document.getElementById('habits-mic-container').style.display = 'flex';
+                this.listenToHabitExplanation();
+            });
+        }
+    },
+
+    listenToHabitExplanation() {
+        const mic = document.getElementById('btn-habit-mic');
+        const glow = document.getElementById('habits-mic-glow');
+        const status = document.getElementById('habits-mic-status-text');
+
+        if (mic) mic.classList.add('listening');
+        if (glow) glow.classList.add('listening');
+        if (status) status.innerText = "🎙️ ¡Eliubot te está escuchando! Cuéntale qué pasó...";
+
+        SpeechRecognitionEngine.listen(
+            (transcript) => {
+                if (mic) mic.classList.remove('listening');
+                if (glow) glow.classList.remove('listening');
+                
+                const reply = `¡Entiendo perfectamente, Eliu! A veces pasa. Pero qué te parece si vamos juntos a hacerlo ahora? ¡Yo te acompaño!`;
+                if (status) status.innerText = `Dijiste: "${transcript}"`;
+                
+                document.getElementById('habits-speech-bubble').innerText = reply;
+                
+                // Log conversation
+                ConversationsLogger.log("Hábitos (No)", this.habits[this.currentIndex].speakPrompt + " -> Aún no", `Eliu explica: "${transcript}". Eliubot responde: "${reply}"`);
+
+                VoiceEngine.speak(reply, () => {
+                    setTimeout(() => this.nextQuestion(), 1000);
+                });
+            },
+            () => {
+                if (mic) mic.classList.remove('listening');
+                if (glow) glow.classList.remove('listening');
+                if (status) status.innerText = "Se acabó el tiempo. ¡Presiona el micrófono para hablar!";
+            }
+        );
+    },
+
+    nextQuestion() {
+        document.getElementById('habits-mic-container').style.display = 'none';
+        
+        this.currentIndex++;
+        if (this.currentIndex < this.habits.length) {
+            this.showQuestion(this.currentIndex);
+        } else {
+            // Completado de Hábitos del día!
+            const todayStr = new Date().toISOString().split('T')[0];
+            localStorage.setItem('eliu_aprende_habitos_fecha', todayStr);
+            
+            // Registrar en historial para el calendario del panel de padres
+            let history = [];
+            const savedHistory = localStorage.getItem('eliu_aprende_habitos_historial');
+            if (savedHistory) {
+                try { history = JSON.parse(savedHistory); } catch(e) {}
+            }
+            // Evitar duplicados del mismo día
+            history = history.filter(h => h.fecha !== todayStr);
+            history.unshift({
+                fecha: todayStr,
+                checks: this.results
+            });
+            localStorage.setItem('eliu_aprende_habitos_historial', JSON.stringify(history.slice(0, 30))); // guardar últimos 30 días
+
+            // Recompensar estrellas
+            Gamification.awardStars(30);
+            
+            document.getElementById('habits-question-box').style.display = 'none';
+            document.getElementById('habits-congrat-box').style.display = 'block';
+
+            const finishGreeting = `¡Espectacular, Eliu! ¡Has completado todos tus hábitos del día! Has ganado 30 estrellas súper doradas. ¡Ahora estás listo para entrar al mapa de tus islas y aprender! 🚀🏆`;
+            document.getElementById('habits-speech-bubble').innerText = finishGreeting;
+
+            SoundManager.play('success');
+            VoiceEngine.speak(finishGreeting);
+        }
+    }
+};
+
+// ==========================================================================
+// 🎁 COFRE DE RECUERDOS MÁGICOS (CHALLENGES & RECORDER)
+// ==========================================================================
+const CofreManager = {
+    mediaRecorder: null,
+    audioChunks: [],
+    recordingTimer: null,
+    recordingDuration: 0,
+    currentChallengeType: null,
+    currentChallengeLabel: "",
+    isRecording: false,
+
+    init() {
+        // Enlazar botones del grabador
+        const recordBtn = document.getElementById('btn-cofre-record');
+        if (recordBtn) {
+            recordBtn.onclick = () => {
+                if (this.isRecording) {
+                    this.stopRecording();
+                } else {
+                    this.startRecording();
+                }
+            };
+        }
+
+        const cancelBtn = document.getElementById('btn-cofre-cancel');
+        if (cancelBtn) {
+            cancelBtn.onclick = () => {
+                SoundManager.play('click');
+                this.cancelRecording();
+            };
+        }
+    },
+
+    selectChallenge(type, promptText) {
+        SoundManager.play('click');
+        VoiceEngine.stop();
+        this.currentChallengeType = type;
+        this.currentChallengeLabel = promptText;
+
+        // Reset recorder UI
+        const panel = document.getElementById('cofre-recorder-panel');
+        if (panel) panel.style.display = 'block';
+        
+        const titleEl = document.getElementById('cofre-challenge-title');
+        if (titleEl) titleEl.innerText = `Desafío: ${promptText}`;
+        
+        const animEl = document.getElementById('cofre-recording-animation');
+        if (animEl) animEl.style.display = 'none';
+        
+        const timerEl = document.getElementById('cofre-recorder-timer');
+        if (timerEl) {
+            timerEl.style.display = 'none';
+            timerEl.innerText = "00:00";
+        }
+
+        const recordBtn = document.getElementById('btn-cofre-record');
+        if (recordBtn) {
+            recordBtn.innerText = "🔴 Iniciar Grabación";
+            recordBtn.className = "btn-back-kids";
+            recordBtn.style.background = "linear-gradient(135deg, #ff4d4d 0%, #d90429 100%)";
+        }
+
+        // Leer el desafío en voz alta
+        const greeting = `¡Súper desafío! ${promptText}. Presiona el botón rojo cuando estés listo para empezar a hablar. ¡Yo guardaré tu recuerdo!`;
+        document.getElementById('cofre-speech-bubble').innerText = greeting;
+
+        const mascot = document.getElementById('cofre-mascot-avatar');
+        if (mascot) mascot.classList.add('talking');
+        VoiceEngine.speak(greeting, () => {
+            if (mascot) mascot.classList.remove('talking');
+        });
+    },
+
+    async startRecording() {
+        if (this.isRecording) return;
+        
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.mediaRecorder = new MediaRecorder(stream);
+            this.audioChunks = [];
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+                
+                // Convert to base64
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = () => {
+                    const base64Audio = reader.result;
+                    this.saveRecordedAudio(base64Audio);
+                };
+
+                // Detener todas las pistas de audio para liberar el micrófono
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            // Iniciar la grabación
+            this.mediaRecorder.start();
+            this.isRecording = true;
+            SoundManager.play('success');
+
+            // Actualizar interfaz
+            const recordBtn = document.getElementById('btn-cofre-record');
+            if (recordBtn) {
+                recordBtn.innerText = "⏹️ Detener y Guardar";
+                recordBtn.style.background = "linear-gradient(135deg, #f39c12 0%, #d35400 100%)";
+            }
+            
+            const animEl = document.getElementById('cofre-recording-animation');
+            if (animEl) animEl.style.display = 'flex';
+            
+            const timerEl = document.getElementById('cofre-recorder-timer');
+            if (timerEl) {
+                timerEl.style.display = 'block';
+                timerEl.innerText = "00:00";
+            }
+            
+            this.recordingDuration = 0;
+            this.recordingTimer = setInterval(() => {
+                this.recordingDuration++;
+                const mins = Math.floor(this.recordingDuration / 60).toString().padStart(2, '0');
+                const secs = (this.recordingDuration % 60).toString().padStart(2, '0');
+                if (timerEl) timerEl.innerText = `${mins}:${secs}`;
+                
+                // Limitar la grabación a 1 minuto
+                if (this.recordingDuration >= 60) {
+                    this.stopRecording();
+                }
+            }, 1000);
+
+            const recordGreeting = "¡Grabando! Te escucho con mucha atención...";
+            document.getElementById('cofre-speech-bubble').innerText = recordGreeting;
+
+        } catch (err) {
+            console.error("No se pudo iniciar la grabación de audio:", err);
+            alert("No pudimos abrir tu micrófono. Por favor, asegúrate de dar permisos de micrófono en tu navegador y tableta.");
+        }
+    },
+
+    stopRecording() {
+        if (!this.isRecording) return;
+        
+        clearInterval(this.recordingTimer);
+        this.mediaRecorder.stop();
+        this.isRecording = false;
+
+        // Reset UI elements
+        const animEl = document.getElementById('cofre-recording-animation');
+        if (animEl) animEl.style.display = 'none';
+        
+        const panel = document.getElementById('cofre-recorder-panel');
+        if (panel) panel.style.display = 'none';
+    },
+
+    cancelRecording() {
+        if (this.isRecording) {
+            clearInterval(this.recordingTimer);
+            this.mediaRecorder.onstop = null; // No guardar
+            this.mediaRecorder.stop();
+            this.isRecording = false;
+        }
+        const panel = document.getElementById('cofre-recorder-panel');
+        if (panel) panel.style.display = 'none';
+        document.getElementById('cofre-speech-bubble').innerText = "¡Elegimos otro desafío para guardar en mi cofre! 💎";
+    },
+
+    saveRecordedAudio(base64Data) {
+        try {
+            let audios = [];
+            const savedAudios = localStorage.getItem('eliu_aprende_recorded_audios');
+            if (savedAudios) {
+                audios = JSON.parse(savedAudios);
+            }
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('es-CL');
+            const timeStr = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+
+            const newAudio = {
+                id: 'audio_' + Date.now(),
+                date: dateStr,
+                time: timeStr,
+                type: this.currentChallengeType,
+                label: this.currentChallengeLabel,
+                dataUrl: base64Data
+            };
+
+            audios.unshift(newAudio);
+            localStorage.setItem('eliu_aprende_recorded_audios', JSON.stringify(audios.slice(0, 30))); // Guardar últimos 30 audios
+
+            // Recompensa por grabar un recuerdo
+            Gamification.awardStars(20);
+
+            const successGreeting = `¡Espectacular, Eliu! He guardado tu hermosa voz en una gema mágica en mi cofre. ¡Has ganado +20⭐ de premio! 💎✨`;
+            document.getElementById('cofre-speech-bubble').innerText = successGreeting;
+
+            SoundManager.play('success');
+            
+            const mascot = document.getElementById('cofre-mascot-avatar');
+            if (mascot) mascot.classList.add('talking');
+            VoiceEngine.speak(successGreeting, () => {
+                if (mascot) mascot.classList.remove('talking');
+            });
+
+            this.loadGems();
+            
+            // Recargar panel de padres si está abierto
+            if (typeof ParentDashboard !== 'undefined' && ParentDashboard.renderCofreAudios) {
+                ParentDashboard.renderCofreAudios();
+            }
+
+        } catch (e) {
+            console.error("Error al guardar audio en localStorage:", e);
+            alert("¡Oh no! El cofre se llenó de energía mágica y no pudimos guardarlo. Intenta borrar algunas gemas viejas en la pantalla de abajo o en el área de padres.");
+        }
+    },
+
+    loadGems() {
+        const grid = document.getElementById('cofre-gems-grid');
+        if (!grid) return;
+
+        let audios = [];
+        const savedAudios = localStorage.getItem('eliu_aprende_recorded_audios');
+        if (savedAudios) {
+            try { audios = JSON.parse(savedAudios); } catch(e) {}
+        }
+
+        if (audios.length === 0) {
+            grid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 24px; font-weight: 700; font-family: var(--font-kids);">
+                    💎 ¡Tu cofre está listo para recibir gemas mágicas! Elige un desafío arriba y graba tu voz...
+                </div>
+            `;
+            return;
+        }
+
+        const typeColors = {
+            chiste: { bg: 'linear-gradient(135deg, #00f0ff 0%, #0077b6 100%)', emoji: '💬', name: 'Chiste' },
+            historia: { bg: 'linear-gradient(135deg, #ff9f1c 0%, #ff6b6b 100%)', emoji: '🐱', name: 'Historia' },
+            cancion: { bg: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)', emoji: '🎵', name: 'Canción' },
+            imitacion: { bg: 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)', emoji: '🦖', name: 'Imitación' },
+            felicidad: { bg: 'linear-gradient(135deg, #e91e63 0%, #c2185b 100%)', emoji: '☀️', name: 'Feliz' }
+        };
+
+        grid.innerHTML = audios.map((audio) => {
+            const config = typeColors[audio.type] || { bg: 'var(--color-diario)', emoji: '💎', name: 'Recuerdo' };
+            return `
+                <div class="weekly-day-card btn-interactive" 
+                     onclick="CofreManager.playGemAudio('${audio.id}')" 
+                     ondblclick="CofreManager.deleteGemConfirm('${audio.id}')"
+                     style="background: ${config.bg}; color: white; border: none; padding: 12px; height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; cursor: pointer; position: relative;">
+                    <span style="font-size: 32px; margin-bottom: 2px;">💎</span>
+                    <span style="font-size: 11px; font-weight: 700; opacity: 0.9;">${config.name} (${audio.date})</span>
+                    <span style="font-size: 10px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">${audio.time} - ${config.emoji}</span>
+                    <div style="font-size: 9px; position: absolute; bottom: 4px; left: 0; right: 0; opacity: 0.6; font-weight: 600;">Haz clic para oír 🔊</div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    currentPlayingAudio: null,
+    playGemAudio(id) {
+        SoundManager.play('click');
+        let audios = [];
+        const savedAudios = localStorage.getItem('eliu_aprende_recorded_audios');
+        if (savedAudios) {
+            try { audios = JSON.parse(savedAudios); } catch(e) {}
+        }
+
+        const audio = audios.find(a => a.id === id);
+        if (!audio) return;
+
+        // Detener audio anterior si hay uno sonando
+        if (this.currentPlayingAudio) {
+            this.currentPlayingAudio.pause();
+            this.currentPlayingAudio = null;
+        }
+
+        try {
+            this.currentPlayingAudio = new Audio(audio.dataUrl);
+            this.currentPlayingAudio.play();
+            
+            // Efecto de boca moviéndose
+            const mascot = document.getElementById('cofre-mascot-avatar');
+            if (mascot) mascot.classList.add('talking');
+            this.currentPlayingAudio.onended = () => {
+                if (mascot) mascot.classList.remove('talking');
+                this.currentPlayingAudio = null;
+            };
+        } catch(e) {
+            console.error("Error al reproducir audio:", e);
+        }
+    },
+
+    deleteGemConfirm(id) {
+        SoundManager.play('click');
+        if (confirm("¿Quieres borrar esta gema de recuerdo del cofre? 💎")) {
+            let audios = [];
+            const savedAudios = localStorage.getItem('eliu_aprende_recorded_audios');
+            if (savedAudios) {
+                try { audios = JSON.parse(savedAudios); } catch(e) {}
+            }
+
+            audios = audios.filter(a => a.id !== id);
+            localStorage.setItem('eliu_aprende_recorded_audios', JSON.stringify(audios));
+            
+            SoundManager.play('wrong');
+            this.loadGems();
+            
+            // Recargar panel de padres si está abierto
+            if (typeof ParentDashboard !== 'undefined' && ParentDashboard.renderCofreAudios) {
+                ParentDashboard.renderCofreAudios();
+            }
+        }
+    }
+};
+
 // Cargar aplicación al terminar de cargar el DOM
 window.addEventListener('DOMContentLoaded', () => {
+    // Chequear si se completaron hábitos hoy
+    const todayStr = new Date().toISOString().split('T')[0];
+    const lastHabitsDate = localStorage.getItem('eliu_aprende_habitos_fecha');
+    
     App.init();
+
+    if (lastHabitsDate !== todayStr) {
+        HabitsManager.startCheckin();
+    } else {
+        App.showView('kids-dashboard-view');
+    }
 });

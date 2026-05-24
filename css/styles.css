@@ -628,3 +628,363 @@ body {
     from { opacity: 0; transform: scale(0.95); }
     to { opacity: 1; transform: scale(1); }
 }
+
+/* ==========================================================================
+   ANIMACIÓN DE GRABACIÓN DE AUDIO (SOUNDWAVE BOUNCE)
+   ========================================================================== */
+@keyframes bounceHeight {
+    0%, 100% { transform: scaleY(0.3); }
+    50% { transform: scaleY(1); }
+}
+
+/* ==========================================================================
+   ROBUSTO SISTEMA DE TABS PARA EL ÁREA DE PADRES (PANEL CAS)
+   ========================================================================== */
+.parent-dashboard-wrapper {
+    display: flex;
+    gap: 24px;
+    font-family: var(--font-parents);
+    align-items: stretch;
+    width: 100%;
+}
+
+.parent-sidebar {
+    width: 250px;
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-parent-tab {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    background: transparent;
+    color: #4a5568;
+    width: 100%;
+}
+
+.btn-parent-tab:hover {
+    background: #f7fafc;
+    color: #2b6cb0;
+    transform: translateX(4px);
+}
+
+.btn-parent-tab.active {
+    background: #e2e8f0;
+    color: #2b6cb0;
+    box-shadow: inset 4px 0 0 #2b6cb0;
+}
+
+.parent-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.parent-tab-section {
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+    animation: fadeInView 0.3s ease-out;
+}
+
+.parent-tab-section.active {
+    display: flex;
+}
+
+/* Tablas e Historiales */
+.habits-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.habit-day-card {
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.habit-day-header {
+    font-weight: 800;
+    color: #2d3748;
+    font-size: 15px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.habit-day-row-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.habit-mini-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.habit-mini-badge.yes {
+    background: #e6fffa;
+    color: #086f6c;
+    border: 1px solid #b2f5ea;
+}
+
+.habit-mini-badge.no {
+    background: #fff5f5;
+    color: #9b2c2c;
+    border: 1px solid #fed7d7;
+}
+
+/* Bitácora de chats */
+.chat-logs-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.chat-log-card {
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.chat-log-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    max-width: 90%;
+    font-weight: 600;
+}
+
+.chat-log-bubble.nino {
+    background: #e2e8f0;
+    color: #2d3748;
+    align-self: flex-start;
+}
+
+.chat-log-bubble.bot {
+    background: #ebf8ff;
+    color: #2b6cb0;
+    align-self: flex-end;
+    border-left: 4px solid #3182ce;
+}
+
+/* Playlist del cofre */
+.cofre-playlist-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.playlist-audio-item {
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.audio-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.audio-item-title {
+    font-weight: 800;
+    color: #2d3748;
+    font-size: 14px;
+}
+
+.audio-item-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.audio-item-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn-audio-play {
+    background: #3182ce;
+    color: white;
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.2s;
+}
+
+.btn-audio-play:hover {
+    background: #2b6cb0;
+}
+
+.btn-audio-delete {
+    background: #e53e3e;
+    color: white;
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.2s;
+}
+
+.btn-audio-delete:hover {
+    background: #c53030;
+}
+
+/* Portafolio e IA */
+.ai-insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.insight-card {
+    background: #f7fafc;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+}
+
+.insight-card h4 {
+    font-size: 16px;
+    font-weight: 800;
+    color: #2b6cb0;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.insight-card p {
+    font-size: 13px;
+    color: #4a5568;
+    line-height: 1.6;
+    font-weight: 600;
+}
+
+/* @media print para reportes hermosos */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #parent-dashboard-view, #parent-dashboard-view * {
+        visibility: visible;
+    }
+    #parent-dashboard-view {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white;
+    }
+    .parent-sidebar, .btn-back-kids, .navbar, .btn-silence-floating, #btn-back-to-kids, .lock-card, .lock-input-group, .btn-lock-submit, .btn-lock-cancel, .parent-actions-card, #btn-save-pages, #btn-test-voice, .voice-settings-card, .book-update-card {
+        display: none !important;
+    }
+    .parent-tab-section {
+        display: flex !important;
+        page-break-inside: avoid;
+    }
+    .card, .habit-day-card, .chat-log-card, .playlist-audio-item, .insight-card {
+        border: 1px solid #cbd5e0 !important;
+        box-shadow: none !important;
+        background: white !important;
+        color: black !important;
+    }
+    .parent-dashboard-wrapper {
+        display: block !important;
+    }
+    .parent-main-content {
+        width: 100% !important;
+    }
+    h2, h3, h4 {
+        color: black !important;
+    }
+}
+
+/* Responsividad para móviles del Panel de Padres */
+@media (max-width: 800px) {
+    .parent-dashboard-wrapper {
+        flex-direction: column;
+    }
+    .parent-sidebar {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 10px;
+        white-space: nowrap;
+    }
+    .btn-parent-tab {
+        width: auto;
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+}

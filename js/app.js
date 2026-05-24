@@ -1163,7 +1163,11 @@ const VideoCallSystem = {
             return;
         }
 
-        const geminiKey = localStorage.getItem('eliu_aprende_gemini_key');
+        let geminiKey = localStorage.getItem('eliu_aprende_gemini_key');
+        if (!geminiKey) {
+            geminiKey = 'AIzaSyDiztJS8-qRAuDZO2Re83LF63Z5x-aIQTc';
+            localStorage.setItem('eliu_aprende_gemini_key', geminiKey);
+        }
         if (geminiKey) {
             if (overlayText) overlayText.innerText = "Pensando... 🤖";
             
@@ -2000,7 +2004,11 @@ const App = {
             return;
         }
 
-        const geminiKey = localStorage.getItem('eliu_aprende_gemini_key');
+        let geminiKey = localStorage.getItem('eliu_aprende_gemini_key');
+        if (!geminiKey) {
+            geminiKey = 'AIzaSyDiztJS8-qRAuDZO2Re83LF63Z5x-aIQTc';
+            localStorage.setItem('eliu_aprende_gemini_key', geminiKey);
+        }
         if (geminiKey) {
             statusText.innerText = "Pensando... 🤖";
             

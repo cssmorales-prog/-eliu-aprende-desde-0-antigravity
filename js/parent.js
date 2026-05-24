@@ -448,7 +448,11 @@ const ParentDashboard = {
         if (keyInput) keyInput.value = savedKey;
         if (idInput) idInput.value = savedId;
 
-        const savedGemini = localStorage.getItem('eliu_aprende_gemini_key') || '';
+        let savedGemini = localStorage.getItem('eliu_aprende_gemini_key');
+        if (!savedGemini) {
+            savedGemini = 'AIzaSyDiztJS8-qRAuDZO2Re83LF63Z5x-aIQTc';
+            localStorage.setItem('eliu_aprende_gemini_key', savedGemini);
+        }
         const geminiInput = document.getElementById('voice-gemini-key');
         if (geminiInput) geminiInput.value = savedGemini;
 

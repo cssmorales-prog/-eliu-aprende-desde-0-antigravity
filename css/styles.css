@@ -1,0 +1,630 @@
+/* ==========================================================================
+   AVENTURAS DE APRENDIZAJE CON ELIÚ - SISTEMA DE DISEÑO GLOBAL
+   Tema: Roblox & Robots 🤖🎮 (Moderno, Responsivo y Adaptativo)
+   ========================================================================== */
+
+/* Importar Fuentes Amigables para Niños desde Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Quicksand:wght@400;500;700&display=swap');
+
+:root {
+    /* Paleta de Colores de Asignaturas (Estilo Pastel Brillante / Neon Suave) */
+    --color-lenguaje: #3a86ff;      /* Celeste / Azul Roblox */
+    --color-lenguaje-light: #e8f0fe;
+    
+    --color-matematica: #ffbe0b;    /* Amarillo / Naranja Roblox */
+    --color-matematica-light: #fffbeb;
+    
+    --color-ciencias: #06d6a0;      /* Verde Menta / Naturaleza */
+    --color-ciencias-light: #e6fcf5;
+    
+    --color-historia: #9b5de5;      /* Morado Aventura */
+    --color-historia-light: #f5edff;
+    
+    --color-diario: #ff006e;        /* Coral Diario */
+    --color-diario-light: #ffe6f0;
+
+    /* Colores del Sistema */
+    --bg-app: #f0f4f8;
+    --bg-card: #ffffff;
+    --text-main: #2b3a4a;
+    --text-muted: #6b7c93;
+    --border-color: #e2e8f0;
+    
+    /* Variables de Estilo Roblox/Robots */
+    --roblox-dark: #1e1f22;
+    --roblox-red: #f13138;
+    --neon-blue: #00f0ff;
+    --neon-green: #39ff14;
+    --neon-gold: #ffea00;
+    
+    /* Fuentes */
+    --font-kids: 'Fredoka', 'Quicksand', system-ui, sans-serif;
+    --font-parents: 'Quicksand', system-ui, sans-serif;
+    
+    /* Sombras y Radios */
+    --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.05);
+    --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+    --shadow-neon: 0 0 15px rgba(0, 240, 255, 0.4);
+    
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
+    
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Reset y Estilos Globales */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: var(--font-kids);
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.5;
+}
+
+/* Contenedor Principal SPA */
+#app-container {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* Barra de Navegación Superior Estilo Roblox */
+.navbar {
+    background-color: var(--roblox-dark);
+    color: white;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 3px solid var(--roblox-red);
+}
+
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.navbar-logo .logo-icon {
+    font-size: 28px;
+    animation: pulseRobot 2s infinite alternate;
+}
+
+.navbar-logo span {
+    color: white;
+}
+
+.navbar-logo .highlight {
+    color: var(--neon-blue);
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+}
+
+/* Indicadores de Progreso en Barra Superior */
+.navbar-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-bubble {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 6px 14px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: var(--transition-normal);
+}
+
+.stat-bubble:hover {
+    transform: scale(1.05);
+    background: rgba(255,255,255,0.15);
+}
+
+.stat-bubble.stars {
+    border-color: var(--neon-gold);
+    color: var(--neon-gold);
+    text-shadow: 0 0 5px rgba(255, 234, 0, 0.3);
+}
+
+.stat-bubble.streaks {
+    border-color: #ff5a5f;
+    color: #ff5a5f;
+}
+
+/* Botones de Navegación */
+.btn-nav-parent {
+    background: linear-gradient(135deg, #4a5568, #2d3748);
+    border: 2px solid #718096;
+    color: white;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-family: var(--font-parents);
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    transition: var(--transition-normal);
+}
+
+.btn-nav-parent:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border-color: white;
+}
+
+/* Contenedor de Vistas SPA */
+.view-section {
+    flex: 1;
+    display: none; /* Se activa dinámicamente con JS */
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.view-section.active {
+    display: block;
+    animation: fadeInView 0.4s ease-out;
+}
+
+/* Estilos Comunes de Tarjetas */
+.card {
+    background-color: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 24px;
+    border: 3px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition-normal);
+}
+
+/* ==========================================================================
+   ESTILOS PANEL DE PADRES (ÁREA PROTEGIDA)
+   ========================================================================== */
+.parent-dashboard {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+@media(min-width: 900px) {
+    .parent-dashboard {
+        grid-template-columns: 2fr 1fr;
+    }
+}
+
+.parent-header {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 16px;
+    margin-bottom: 8px;
+}
+
+.parent-title {
+    font-size: 28px;
+    color: #2d3748;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-back-kids {
+    background: linear-gradient(135deg, #00b4d8, #0077b6);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 16px;
+    box-shadow: 0 4px 10px rgba(0, 180, 216, 0.3);
+    transition: var(--transition-normal);
+}
+
+.btn-back-kids:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 6px 15px rgba(0, 180, 216, 0.5);
+}
+
+/* Reja de Estado General */
+.parent-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.parent-stat-card {
+    background: #f7fafc;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.parent-stat-val {
+    font-size: 32px;
+    font-weight: 800;
+    color: #2b6cb0;
+    margin: 8px 0 4px;
+}
+
+.parent-stat-lbl {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+/* Gráfico / Barras de Progreso de Asignaturas */
+.subject-progress-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.subject-progress-row {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    padding: 16px;
+    border-radius: var(--radius-md);
+}
+
+.subject-progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.progress-bar-bg {
+    background-color: #edf2f7;
+    height: 14px;
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    border-radius: 7px;
+    transition: width 0.8s cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+
+/* Actualizar páginas de libros */
+.book-update-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.book-inputs-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.book-input-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f7fafc;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.book-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: #4a5568;
+    max-width: 60%;
+}
+
+.book-input-group input {
+    width: 60px;
+    padding: 6px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 15px;
+    color: #2b6cb0;
+}
+
+.book-input-group input:focus {
+    outline: none;
+    border-color: #3182ce;
+}
+
+/* Galería de Dibujos del Diario en el Panel de Padres */
+.parent-diary-gallery {
+    grid-column: 1 / -1;
+    margin-top: 16px;
+}
+
+.diary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 16px;
+}
+
+.diary-item-card {
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.diary-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.diary-item-thumb {
+    width: 100%;
+    height: 150px;
+    border-radius: 8px;
+    object-fit: contain;
+    background: #f7fafc;
+    border: 1px solid #edf2f7;
+}
+
+.diary-item-text {
+    font-size: 14px;
+    color: var(--text-main);
+    font-style: italic;
+    background: #f7fafc;
+    padding: 8px;
+    border-radius: 6px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+}
+
+.diary-item-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.btn-download-art, .btn-delete-entry {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: var(--transition-fast);
+}
+
+.btn-download-art {
+    background-color: #ebf8ff;
+    color: #2b6cb0;
+}
+
+.btn-download-art:hover {
+    background-color: #bee3f8;
+}
+
+.btn-delete-entry {
+    background-color: #fff5f5;
+    color: #c53030;
+}
+
+.btn-delete-entry:hover {
+    background-color: #fed7d7;
+}
+
+/* Controles de Respaldo e Historial */
+.parent-actions-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-parent-action {
+    width: 100%;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    border: none;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-parent-action.export {
+    background-color: #e6fffa;
+    color: #234e52;
+    border: 2px solid #b2f5ea;
+}
+
+.btn-parent-action.export:hover {
+    background-color: #b2f5ea;
+}
+
+.btn-parent-action.import {
+    background-color: #f7fafc;
+    color: #4a5568;
+    border: 2px solid var(--border-color);
+}
+
+.btn-parent-action.import:hover {
+    background-color: #edf2f7;
+}
+
+/* Modal de Autenticación de Padres (Cierre Matemático) */
+.parent-lock-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(30, 31, 34, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: none; /* Controlado por JS */
+    align-items: center;
+    justify-content: center;
+}
+
+.parent-lock-modal.active {
+    display: flex;
+    animation: fadeInModal 0.3s ease-out;
+}
+
+.lock-card {
+    background: white;
+    padding: 32px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    border: 4px solid var(--roblox-dark);
+}
+
+.lock-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 12px;
+}
+
+.lock-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+}
+
+.lock-question {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--roblox-red);
+    background: #f7fafc;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    margin-bottom: 24px;
+    border: 2px dashed var(--border-color);
+}
+
+.lock-input-group {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.lock-input-group input {
+    flex: 1;
+    padding: 14px;
+    border: 3px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.lock-input-group input:focus {
+    outline: none;
+    border-color: var(--roblox-red);
+}
+
+.btn-lock-submit {
+    background: var(--roblox-dark);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-lock-submit:hover {
+    background: var(--roblox-red);
+}
+
+.btn-lock-cancel {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 16px;
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   ANIMACIONES CLAVE
+   ========================================================================== */
+@keyframes pulseRobot {
+    0% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 2px var(--neon-blue)); }
+    50% { transform: scale(1.1) rotate(5deg); filter: drop-shadow(0 0 8px var(--neon-blue)); }
+    100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 2px var(--neon-blue)); }
+}
+
+@keyframes fadeInView {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}

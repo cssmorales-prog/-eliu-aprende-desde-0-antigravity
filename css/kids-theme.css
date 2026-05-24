@@ -1,0 +1,1575 @@
+/* ==========================================================================
+   TEMA DE NIÑOS - BLOQUES, ROBOTS Y ROBLOX 🤖🎮
+   Diseño altamente táctil, interactivo, colorido y divertido.
+   ========================================================================== */
+
+/* 1. Dashboard Infantil - El Mapa de las Islas */
+.kids-dashboard-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.welcome-banner {
+    background: linear-gradient(135deg, var(--roblox-dark) 0%, #2c3e50 100%);
+    border: 4px solid var(--neon-blue);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    color: white;
+    position: relative;
+    box-shadow: var(--shadow-neon);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+}
+
+.welcome-banner::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.welcome-text h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.welcome-text p {
+    font-size: 16px;
+    color: #cbd5e0;
+    font-weight: 500;
+}
+
+.mascot-avatar {
+    width: 100px;
+    height: 100px;
+    background: #2d3748;
+    border: 3px solid var(--neon-blue);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transition: var(--transition-normal);
+}
+
+.mascot-avatar:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 0 20px var(--neon-blue);
+}
+
+/* Cabeza de Robot blocky (Eliubot) */
+.robot-head {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #374151 0%, #111827 100%);
+    border: 4px solid var(--neon-blue);
+    border-radius: 16px;
+    position: relative;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.4), inset 0 2px 4px rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-normal);
+}
+
+/* Orejas del Robot */
+.robot-ears {
+    position: absolute;
+    width: 100%;
+    height: 20px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.robot-ears .ear {
+    width: 10px;
+    height: 20px;
+    background: #4b5563;
+    border: 3px solid var(--neon-blue);
+}
+
+.robot-ears .left-ear {
+    border-radius: 6px 0 0 6px;
+    margin-left: -8px;
+}
+
+.robot-ears .right-ear {
+    border-radius: 0 6px 6px 0;
+    margin-right: -8px;
+}
+
+/* Antena del Robot */
+.robot-antenna {
+    position: absolute;
+    top: -24px;
+    width: 20px;
+    height: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+}
+
+.robot-antenna .antenna-mast {
+    width: 4px;
+    height: 16px;
+    background: #4b5563;
+    border: 1px solid var(--neon-blue);
+}
+
+.robot-antenna .antenna-ball {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-diario);
+    box-shadow: 0 0 10px var(--color-diario);
+    animation: pulseAntenna 1.5s infinite ease-in-out;
+}
+
+/* Pantalla de la Cara */
+.robot-face {
+    width: 60px;
+    height: 50px;
+    background-image: url('../images/eliu_marshall.png');
+    background-size: cover;
+    background-position: center 20%;
+    border-radius: 8px;
+    border: 2px solid var(--neon-blue);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 4px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3), 0 0 10px rgba(0, 240, 255, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Semi-transparent futuristic digital overlay grid */
+.robot-face::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(rgba(0, 240, 255, 0.08) 50%, rgba(0, 0, 0, 0.15) 50%), 
+                linear-gradient(90deg, rgba(0, 240, 255, 0.05), rgba(255, 255, 255, 0.02), rgba(0, 240, 255, 0.05));
+    background-size: 100% 4px, 4px 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Glowing digital scanner bar */
+.robot-face::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: var(--neon-blue);
+    box-shadow: 0 0 6px var(--neon-blue);
+    top: 0;
+    left: 0;
+    animation: scanLine 3s infinite linear;
+    z-index: 2;
+    opacity: 0.6;
+}
+
+@keyframes scanLine {
+    0% { top: 0%; }
+    50% { top: 100%; }
+    100% { top: 0%; }
+}
+
+/* Ojos digitalizados - Hidden to show his real eyes */
+.robot-eyes {
+    display: none;
+}
+
+/* Boca digital vibrante - Styled as a floating neon chin equalizer display */
+.robot-mouth {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    width: 36px;
+    height: 12px;
+    background: rgba(11, 15, 23, 0.75);
+    border-radius: 4px;
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    padding: 2px;
+    z-index: 3;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.robot-mouth .mouth-bar {
+    width: 5px;
+    height: 3px;
+    background-color: var(--neon-blue);
+    border-radius: 1px;
+    box-shadow: 0 0 4px var(--neon-blue);
+    transition: height 0.1s ease;
+}
+
+/* Animación cuando Eliubot está hablando */
+.robot-head.talking .robot-mouth .mouth-bar,
+.talking-head.talking .robot-mouth .mouth-bar {
+    animation: robotMouthTalk 0.25s infinite alternate ease-in-out;
+}
+
+.robot-head.talking .robot-mouth .mouth-bar:nth-child(1),
+.talking-head.talking .robot-mouth .mouth-bar:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.robot-head.talking .robot-mouth .mouth-bar:nth-child(2),
+.talking-head.talking .robot-mouth .mouth-bar:nth-child(2) {
+    animation-delay: 0.08s;
+}
+
+.robot-head.talking .robot-mouth .mouth-bar:nth-child(3),
+.talking-head.talking .robot-mouth .mouth-bar:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+.robot-head.talking,
+.talking-head.talking {
+    animation: robotTalkingHead 0.3s infinite alternate ease-in-out;
+}
+
+/* Animación de la Cabeza Flotante general */
+.mascot-avatar .robot-head {
+    border: none;
+    box-shadow: none;
+}
+
+.mascot-avatar:hover .robot-head {
+    box-shadow: 0 0 15px var(--neon-blue);
+}
+
+@keyframes blinkEye {
+    0%, 94%, 100% { transform: scaleY(1); }
+    97% { transform: scaleY(0.1); }
+}
+
+@keyframes pulseAntenna {
+    0%, 100% { opacity: 0.7; transform: scale(1); box-shadow: 0 0 5px var(--color-diario); }
+    50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 15px var(--color-diario), 0 0 5px var(--color-diario); }
+}
+
+@keyframes robotMouthTalk {
+    0% { height: 3px; background-color: var(--neon-green); box-shadow: 0 0 4px var(--neon-green); }
+    100% { height: 12px; background-color: var(--neon-blue); box-shadow: 0 0 8px var(--neon-blue); }
+}
+
+@keyframes robotTalkingHead {
+    0% { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(-4px) rotate(2deg); }
+}
+
+.speech-bubble {
+    position: absolute;
+    right: 120px;
+    background: white;
+    color: var(--text-main);
+    padding: 12px 18px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    font-weight: 600;
+    font-size: 14px;
+    width: 220px;
+    text-align: left;
+    display: none; /* Controlado por JS */
+}
+
+.speech-bubble::after {
+    content: '';
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 10px 0 10px 10px;
+    border-style: solid;
+    border-color: transparent transparent transparent white;
+}
+
+/* Rutina Diaria (Camino de Bloques) */
+.daily-streak-path {
+    background: white;
+    border: 3px dashed var(--color-lenguaje);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+}
+
+.streak-path-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.streak-steps {
+    display: flex;
+    justify-content: space-around;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.streak-step {
+    flex: 1;
+    min-width: 120px;
+    background: #f7fafc;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    transition: var(--transition-normal);
+}
+
+.streak-step.done {
+    background: var(--color-ciencias-light);
+    border-color: var(--color-ciencias);
+    color: #234e52;
+}
+
+.streak-step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.streak-step.done .streak-step-circle {
+    background: var(--color-ciencias);
+    color: white;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Las 4 Islas Flotantes (Asignaturas) */
+.islands-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+    margin-top: 12px;
+}
+
+.island-card {
+    height: 280px;
+    border-radius: var(--radius-lg);
+    border: 4px solid var(--border-color);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px;
+    color: var(--text-main);
+    box-shadow: var(--shadow-md);
+    transition: var(--transition-normal);
+    animation: floatIsland 4s infinite ease-in-out;
+}
+
+/* Animaciones Flotantes Diferidas */
+.island-card:nth-child(1) { animation-delay: 0s; --island-color: var(--color-lenguaje); --island-light: var(--color-lenguaje-light); }
+.island-card:nth-child(2) { animation-delay: 0.5s; --island-color: var(--color-matematica); --island-light: var(--color-matematica-light); }
+.island-card:nth-child(3) { animation-delay: 1s; --island-color: var(--color-ciencias); --island-light: var(--color-ciencias-light); }
+.island-card:nth-child(4) { animation-delay: 1.5s; --island-color: var(--color-historia); --island-light: var(--color-historia-light); }
+
+.island-card {
+    background: linear-gradient(135deg, white 60%, var(--island-light) 100%);
+    border-color: var(--island-color);
+}
+
+.island-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1), 0 0 15px var(--island-color);
+}
+
+.island-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: var(--island-color);
+    color: white;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.island-icon-img-wrapper {
+    width: 100px;
+    height: 100px;
+    background: white;
+    border: 4px solid var(--island-color);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1), inset 0 2px 4px rgba(0,0,0,0.05);
+    transition: var(--transition-normal);
+    margin-top: 16px;
+}
+
+.island-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: var(--transition-normal);
+}
+
+.island-card:hover .island-icon-img-wrapper {
+    transform: scale(1.1) rotate(4deg);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15), 0 0 15px var(--island-color);
+    border-color: var(--island-color);
+}
+
+.island-info h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 4px;
+}
+
+.island-info p {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+/* 2. ZONA DIARIO DE VIDA (Lienzo, Emojis, Caligrafía) */
+.diary-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+@media(min-width: 900px) {
+    .diary-container {
+        grid-template-columns: 3fr 2fr;
+    }
+}
+
+.diary-editor-card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Selector de Emociones (Robots) */
+.emotion-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.emotion-label {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.emotion-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 6px 0;
+}
+
+.btn-emotion {
+    flex: 1;
+    min-width: 64px;
+    height: 70px;
+    background: #f7fafc;
+    border: 3px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: var(--transition-normal);
+}
+
+.btn-emotion span.lbl {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.btn-emotion:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-diario);
+}
+
+.btn-emotion.active {
+    background: var(--color-diario-light);
+    border-color: var(--color-diario);
+    transform: scale(1.08) translateY(-4px);
+    box-shadow: 0 4px 10px rgba(255, 0, 110, 0.2);
+}
+
+.btn-emotion.active span.lbl {
+    color: var(--color-diario);
+}
+
+/* El Canvas de Dibujo y Caligrafía */
+.canvas-wrapper {
+    background: #f7fafc;
+    border: 3px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.canvas-controls {
+    background: #edf2f7;
+    border-bottom: 2px solid var(--border-color);
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.canvas-tool-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.color-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid white;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-fast);
+}
+
+.color-dot:hover {
+    transform: scale(1.15);
+}
+
+.color-dot.active {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 2px var(--text-main);
+}
+
+.btn-canvas {
+    background: white;
+    border: 2px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-canvas:hover {
+    background: #edf2f7;
+}
+
+.btn-canvas.active {
+    background: var(--color-lenguaje-light);
+    border-color: var(--color-lenguaje);
+    color: var(--color-lenguaje);
+}
+
+canvas#drawing-canvas {
+    background-color: white;
+    width: 100%;
+    height: 350px;
+    cursor: crosshair;
+    display: block;
+}
+
+/* Modo Caligrafía - Triple Renglón CSS overlay (simulado en JS pero asistido con clases) */
+.canvas-wrapper.caligrafia-mode {
+    border-color: var(--color-lenguaje);
+}
+
+.caligrafia-hint-box {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-lenguaje);
+}
+
+/* Formulario e Historial del Niño */
+.child-diary-history {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: 3px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.child-diary-history h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.child-diary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.child-diary-card {
+    background: #f8fafc;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    transition: var(--transition-normal);
+}
+
+.child-diary-card:hover {
+    border-color: var(--color-diario);
+    transform: translateX(4px);
+}
+
+.child-diary-thumb {
+    width: 70px;
+    height: 70px;
+    border-radius: 8px;
+    object-fit: contain;
+    background: white;
+    border: 1px solid #edf2f7;
+}
+
+.child-diary-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.child-diary-date {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.child-diary-emocion {
+    font-size: 20px;
+    position: absolute;
+    top: 10px;
+    right: 12px;
+}
+
+.child-diary-note {
+    font-size: 13px;
+    color: var(--text-main);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+/* 3. SIMULACIÓN DE VIDEOLLAMADA CON ELIUBOT (Fase Metacognitiva) */
+.videocall-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle, #1a202c 0%, #0d1117 100%);
+    z-index: 2000;
+    display: none; /* Controlado por JS */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    padding: 24px;
+}
+
+.videocall-overlay.active {
+    display: flex;
+    animation: fadeInModal 0.4s ease-out;
+}
+
+/* Pantalla de Timbre (Ringing) */
+.videocall-ringing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    text-align: center;
+}
+
+.ringing-avatar {
+    width: 160px;
+    height: 160px;
+    background: #2d3748;
+    border: 6px solid var(--neon-blue);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 90px;
+    animation: ripplePhone 1.5s infinite;
+}
+
+.ringing-title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.ringing-status {
+    font-size: 16px;
+    color: #cbd5e0;
+    animation: pulseText 1s infinite alternate;
+}
+
+.btn-videocall-accept {
+    background: linear-gradient(135deg, #39ff14, #2ecc71);
+    color: white;
+    border: none;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    font-size: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.6);
+    transition: var(--transition-normal);
+    animation: shakeAccept 1.2s infinite;
+}
+
+.btn-videocall-accept:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 30px rgba(57, 255, 20, 0.9);
+}
+
+/* Pantalla de Conexión Activa */
+.videocall-active {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 800px;
+    height: 100%;
+    justify-content: space-between;
+}
+
+.videocall-screen-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    width: 100%;
+    flex: 1;
+    margin: 20px 0;
+    position: relative;
+}
+
+@media(min-width: 600px) {
+    .videocall-screen-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stream-card {
+    background: #1e293b;
+    border-radius: var(--radius-lg);
+    border: 3px solid var(--border-color);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stream-card.robot-stream {
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.25);
+    background: radial-gradient(circle, #2d3748 0%, #1a202c 100%);
+}
+
+.stream-mascot-screen {
+    font-size: 150px;
+    animation: robotTalking 0.3s infinite alternate ease-in-out;
+    animation-play-state: paused; /* Controlada por JS cuando habla */
+}
+
+.stream-mascot-screen.talking {
+    animation-play-state: running;
+}
+
+.speech-overlay-text {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    right: 24px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 16px;
+    border-radius: var(--radius-md);
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+}
+
+.stream-card.kid-stream {
+    width: 130px;
+    height: 170px;
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    border-color: white;
+    box-shadow: var(--shadow-lg);
+    background: #334155;
+    z-index: 10;
+    transition: var(--transition-normal);
+}
+
+.stream-card.kid-stream .kid-emoji {
+    font-size: 50px;
+    animation: floatEmoji 2s infinite alternate;
+}
+
+.videocall-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    width: 100%;
+    padding-bottom: 16px;
+}
+
+.btn-call-mic {
+    background: rgba(255,255,255,0.15);
+    border: 2px solid white;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    color: white;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-normal);
+}
+
+.btn-call-mic.listening {
+    background: var(--roblox-red);
+    border-color: var(--roblox-red);
+    box-shadow: 0 0 20px var(--roblox-red);
+    animation: popIn 0.3s, pulseMic 1.2s infinite;
+}
+
+.btn-call-end {
+    background: var(--roblox-red);
+    color: white;
+    border: none;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(241, 49, 56, 0.4);
+    transition: var(--transition-normal);
+}
+
+.btn-call-end:hover {
+    transform: scale(1.05);
+}
+
+/* 4. ÁLBUM DE STICKERS (PREMIOS DE ROBLOX) */
+.sticker-book-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+@media(min-width: 900px) {
+    .sticker-book-container {
+        grid-template-columns: 3fr 1.2fr;
+    }
+}
+
+.sticker-scenery {
+    height: 480px;
+    background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+    border: 4px solid var(--neon-blue);
+    border-radius: var(--radius-lg);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-neon);
+}
+
+.scenery-background-elements {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.scenery-moon {
+    position: absolute;
+    top: 40px;
+    right: 50px;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #ffea00;
+    box-shadow: 0 0 30px rgba(255, 234, 0, 0.5);
+}
+
+.scenery-hills {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 80px;
+    background: #0f172a;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.sticker-panel {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: 3px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sticker-panel h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.stickers-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.draggable-sticker {
+    aspect-ratio: 1;
+    background: #f8fafc;
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    user-select: none;
+    transition: var(--transition-fast);
+    position: relative;
+}
+
+.draggable-sticker.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.draggable-sticker:not(.locked):hover {
+    border-color: var(--color-lenguaje);
+    background: var(--color-lenguaje-light);
+    transform: scale(1.05);
+}
+
+.draggable-sticker span.st-emoji {
+    font-size: 36px;
+}
+
+.draggable-sticker span.st-lbl {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.draggable-sticker .st-lock-icon {
+    position: absolute;
+    font-size: 14px;
+    color: var(--roblox-red);
+}
+
+/* Placed stickers on scenery */
+.placed-sticker {
+    position: absolute;
+    cursor: move;
+    font-size: 48px;
+    user-select: none;
+    z-index: 100;
+    transition: transform 0.1s ease;
+}
+
+.placed-sticker:active {
+    cursor: grabbing;
+    transform: scale(1.2);
+}
+
+/* 5. ACTIVIDADES Y LECCIONES (MÓDULOS DE PREPARACIÓN DE EXAMEN) */
+.activity-card {
+    max-width: 650px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid var(--activity-color);
+    padding-bottom: 12px;
+    margin-bottom: 8px;
+}
+
+.activity-back-btn {
+    background: transparent;
+    border: none;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.activity-back-btn:hover {
+    color: var(--text-main);
+}
+
+.activity-progress {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--activity-color);
+    background: var(--activity-light);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+}
+
+.lesson-content-block {
+    background: var(--activity-light);
+    border: 3px solid var(--activity-color);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+}
+
+.btn-lesson-speech {
+    background: white;
+    border: 2px solid var(--activity-color);
+    color: var(--activity-color);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-normal);
+}
+
+.btn-lesson-speech:hover {
+    transform: scale(1.1);
+    background: var(--activity-color);
+    color: white;
+}
+
+.lesson-speech-bubble {
+    flex: 1;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* Quizzes - Respuestas del Quiz */
+.quiz-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.btn-quiz-option {
+    background: white;
+    border: 3px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    text-align: left;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-quiz-option:hover {
+    transform: translateY(-2px);
+    border-color: var(--activity-color);
+    background: var(--activity-light);
+}
+
+.btn-quiz-option.selected {
+    border-color: var(--activity-color);
+    background: var(--activity-light);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.btn-quiz-option.correct {
+    border-color: var(--color-ciencias);
+    background-color: var(--color-ciencias-light);
+    color: #1b4d3e;
+}
+
+.btn-quiz-option.wrong {
+    border-color: var(--roblox-red);
+    background-color: #fff5f5;
+    color: #721c24;
+}
+
+.btn-activity-submit {
+    background: linear-gradient(135deg, var(--activity-color) 0%, #2c3e50 100%);
+    color: white;
+    border: none;
+    padding: 16px 28px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: var(--transition-normal);
+    margin-top: 16px;
+}
+
+.btn-activity-submit:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+}
+
+/* ==========================================================================
+   ANIMACIONES ESPECÍFICAS DE NIÑOS
+   ========================================================================== */
+@keyframes eyeBlink {
+    0%, 90% { content: '🤖'; }
+    93%, 97% { content: '😑'; }
+    100% { content: '🤖'; }
+}
+
+@keyframes floatIsland {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes ripplePhone {
+    0% { box-shadow: 0 0 0 0px rgba(0, 240, 255, 0.4), 0 0 0 0px rgba(0, 240, 255, 0.2); }
+    70% { box-shadow: 0 0 0 15px rgba(0, 240, 255, 0), 0 0 0 30px rgba(0, 240, 255, 0); }
+    100% { box-shadow: 0 0 0 0px rgba(0, 240, 255, 0), 0 0 0 0px rgba(0, 240, 255, 0); }
+}
+
+@keyframes pulseText {
+    from { opacity: 0.6; }
+    to { opacity: 1; }
+}
+
+@keyframes shakeAccept {
+    0%, 100% { transform: rotate(0deg); }
+    10%, 30%, 50%, 70%, 90% { transform: rotate(-5deg) scale(1.02); }
+    20%, 40%, 60%, 80% { transform: rotate(5deg) scale(1.02); }
+}
+
+@keyframes robotTalking {
+    0% { transform: scale(1) translateY(0); }
+    50% { transform: scale(1.03) translateY(-4px) rotate(1deg); }
+    100% { transform: scale(1) translateY(0); }
+}
+
+@keyframes floatEmoji {
+    from { transform: translateY(0); }
+    to { transform: translateY(-8px); }
+}
+
+@keyframes pulseMic {
+    0% { box-shadow: 0 0 0 0px rgba(241, 49, 56, 0.5); }
+    70% { box-shadow: 0 0 0 15px rgba(241, 49, 56, 0); }
+    100% { box-shadow: 0 0 0 0px rgba(241, 49, 56, 0); }
+}
+
+/* 6. PLANIFICADOR SEMANAL DE ESTUDIO (PANEL DE PADRES) */
+.weekly-days-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+@media(min-width: 600px) {
+    .weekly-days-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+}
+
+.weekly-day-card {
+    background: #f8fafc;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    transition: var(--transition-normal);
+}
+
+.weekly-day-card.active-day {
+    border-color: var(--color-lenguaje);
+    background: var(--color-lenguaje-light);
+    box-shadow: 0 4px 12px rgba(58, 134, 255, 0.1);
+}
+
+.weekly-day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 15px;
+    border-bottom: 2px solid rgba(0,0,0,0.05);
+    padding-bottom: 6px;
+}
+
+.weekly-day-name {
+    color: var(--text-main);
+}
+
+.weekly-day-subject-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: white;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.weekly-day-body {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+    line-height: 1.4;
+    flex: 1;
+}
+
+.weekly-day-meta {
+    font-weight: 700;
+    color: var(--text-main);
+    margin-top: 4px;
+}
+
+.weekly-day-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    color: var(--text-main);
+}
+
+.weekly-day-checkbox-input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--color-ciencias);
+    cursor: pointer;
+}
+
+/* Estilo para misiones dinámicas de Eliu (Dashboard) */
+.streak-step {
+    cursor: pointer;
+    position: relative;
+}
+
+.streak-step.active-mission {
+    border-color: var(--color-lenguaje);
+    background-color: var(--color-lenguaje-light);
+    box-shadow: 0 0 15px rgba(58, 134, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.streak-step.active-mission::before {
+    content: '⭐ HOY ⭐';
+    position: absolute;
+    top: -10px;
+    background: var(--color-matematica);
+    color: var(--text-main);
+    font-size: 8px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 1px solid var(--text-main);
+    animation: floatEmoji 1.5s infinite alternate;
+}
+
+/* 7. BOTÓN TENGO UNA DUDA Y ELEMENTOS DE LECTURA ACTIVA */
+.btn-tengo-duda {
+    background: linear-gradient(135deg, #6f42c1 0%, #593196 100%);
+    color: white;
+    border: 3px solid #b39ddb;
+    padding: 12px 28px;
+    border-radius: 30px;
+    font-family: var(--font-kids);
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(111, 66, 193, 0.3);
+    transition: var(--transition-normal);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-tengo-duda:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(111, 66, 193, 0.5), 0 0 15px #b39ddb;
+}
+
+/* Caja de Texto del Cuento (Isla de Lectura) */
+.reading-story-box {
+    background: white;
+    border: 4px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin: 20px 0;
+    font-size: 28px;
+    line-height: 1.9;
+    letter-spacing: 0.5px;
+    font-family: var(--font-kids);
+    color: var(--text-main);
+    text-align: left;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.02);
+    min-height: 160px;
+}
+
+.reading-word {
+    padding: 2px 6px;
+    border-radius: 6px;
+    display: inline-block;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.reading-word:hover {
+    background-color: #f0f4f8;
+}
+
+/* Coloreado en tiempo real */
+.reading-word.word-highlight {
+    background-color: #fffb96;
+    color: #4a5568;
+    transform: scale(1.1);
+    box-shadow: 0 0 12px #fffb96;
+    font-weight: 700;
+}
+
+.reading-word.word-correct {
+    background-color: #e6fcf5;
+    color: #06d6a0;
+    border-bottom: 3px solid #06d6a0;
+    font-weight: 700;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.reading-word.word-error {
+    background-color: #fff5f5;
+    color: var(--roblox-red);
+    border-bottom: 3px dashed var(--roblox-red);
+    text-decoration: wavy underline var(--roblox-red);
+    font-weight: 700;
+}
+
+/* Micrófono e indicadores */
+.reading-mic-indicator {
+    background: var(--color-diario-light);
+    border: 2px solid var(--color-diario);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.mic-glow-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--color-diario);
+    color: white;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(255, 0, 110, 0.5);
+    animation: pulseMic 1.2s infinite;
+}
+
+/* Tarjeta de error metacognitivo (Casi lo tienes) */
+.metacognitive-error-card {
+    background-color: #fff5f5;
+    border: 3px solid #feb2b2;
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.metacognitive-emoji {
+    font-size: 64px;
+    animation: floatEmoji 2s infinite alternate;
+}
+
+.metacognitive-title {
+    color: #c53030;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.metacognitive-hint {
+    color: #742a2a;
+    font-size: 16px;
+    font-weight: 600;
+    background: white;
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    border: 1px dashed #feb2b2;
+    line-height: 1.5;
+}
+
+.metacognitive-mic-status {
+    font-size: 14px;
+    font-weight: 700;
+    color: #c53030;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    animation: pulseText 1s infinite alternate;
+}
+
+/* Botón flotante global de silencio de Eliubot */
+.btn-silence-floating {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: linear-gradient(135deg, var(--roblox-red) 0%, #c53030 100%);
+    color: white;
+    border: 3px solid #feb2b2;
+    border-radius: 40px;
+    padding: 14px 28px;
+    font-family: var(--font-kids);
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(229, 62, 62, 0.4);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition-normal);
+    animation: popIn 0.3s ease-out, glowSilence 2.5s infinite;
+}
+
+.btn-silence-floating:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(229, 62, 62, 0.6), 0 0 15px var(--roblox-red);
+}
+
+@keyframes glowSilence {
+    0%, 100% { box-shadow: 0 4px 15px rgba(229, 62, 62, 0.4); }
+    50% { box-shadow: 0 4px 25px rgba(229, 62, 62, 0.8), 0 0 10px rgba(229, 62, 62, 0.4); }
+}

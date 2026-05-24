@@ -1,0 +1,618 @@
+/* ==========================================================================
+   MANEJADOR DEL PANEL DE PADRES (ÁREA CONTROLADORA DE APRENDIZAJE)
+   Módulo: js/parent.js
+   Administración del historial, descarga de arte y respaldo completo.
+   ========================================================================== */
+
+const ParentDashboard = {
+    examDate: new Date('2026-10-15T09:00:00'), // Fecha estimada Exámenes Libres Octubre 2026
+    currentMathAnswer: 0,
+
+    init() {
+        this.loadBookPages();
+        this.renderCountdown();
+        this.renderSubjectProgress();
+        this.renderParentStats();
+        this.renderParentGallery();
+        this.loadVoiceSettings();
+        this.renderWeeklyPlanner();
+
+        // Eventos
+        document.getElementById('btn-save-pages').addEventListener('click', () => this.saveBookPages());
+        document.getElementById('btn-export-backup').addEventListener('click', () => this.exportBackup());
+        document.getElementById('btn-import-backup').addEventListener('click', () => {
+            document.getElementById('import-file-selector').click();
+        });
+        document.getElementById('import-file-selector').addEventListener('change', (e) => this.importBackup(e));
+
+        // Eventos Sliders de Voz y Volumen
+        const speedSlider = document.getElementById('voice-speed-slider');
+        if (speedSlider) {
+            speedSlider.addEventListener('input', (e) => this.updateVoiceSpeedLabel(parseFloat(e.target.value)));
+            speedSlider.addEventListener('change', (e) => this.saveVoiceSpeed(parseFloat(e.target.value)));
+        }
+
+        const volSlider = document.getElementById('voice-volume-slider');
+        if (volSlider) {
+            volSlider.addEventListener('input', (e) => this.updateVoiceVolumeLabel(parseFloat(e.target.value)));
+            volSlider.addEventListener('change', (e) => this.saveVoiceVolume(parseFloat(e.target.value)));
+        }
+
+        // Eventos ElevenLabs Key e ID
+        const keyInput = document.getElementById('voice-eleven-key');
+        if (keyInput) {
+            keyInput.addEventListener('input', () => this.saveElevenSettings());
+        }
+
+        const idInput = document.getElementById('voice-eleven-id');
+        if (idInput) {
+            idInput.addEventListener('input', () => this.saveElevenSettings());
+        }
+
+        // Evento Gemini API Key
+        const geminiInput = document.getElementById('voice-gemini-key');
+        if (geminiInput) {
+            geminiInput.addEventListener('input', () => this.saveElevenSettings());
+        }
+
+        // Botón Probar Voz
+        const testVoiceBtn = document.getElementById('btn-test-voice');
+        if (testVoiceBtn) {
+            testVoiceBtn.addEventListener('click', () => this.testEliubotVoice());
+        }
+    },
+
+    // 🔒 ACCESO DE SEGURIDAD (Clave de Padres: 1801)
+    triggerMathLock(onSuccess) {
+        const modal = document.getElementById('parent-lock-modal');
+        const questionText = document.getElementById('lock-question-text');
+        const inputField = document.getElementById('lock-answer-input');
+        
+        if (questionText) questionText.innerText = "🔑 Código de Acceso";
+        inputField.value = '';
+        
+        modal.classList.add('active');
+        inputField.focus();
+
+        // Configurar botones del modal
+        const submitBtn = document.getElementById('btn-lock-submit');
+        const cancelBtn = document.getElementById('btn-lock-cancel');
+
+        // Limpiar manejadores antiguos
+        const newSubmitBtn = submitBtn.cloneNode(true);
+        submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+        newSubmitBtn.addEventListener('click', () => {
+            const val = inputField.value.trim();
+            if (val === '1801') {
+                modal.classList.remove('active');
+                SoundManager.play('success');
+                onSuccess();
+            } else {
+                alert("¡Clave incorrecta! Acceso denegado. Solo adultos en esta zona 🔒");
+                inputField.value = '';
+                inputField.focus();
+            }
+        });
+
+        newCancelBtn.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+
+        // Soporte para presionar 'Enter'
+        inputField.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                newSubmitBtn.click();
+            }
+        });
+    },
+
+    // ⏳ CUENTA REGRESIVA AL EXAMEN LIBRE
+    renderCountdown() {
+        const countdownEl = document.getElementById('parent-countdown');
+        if (!countdownEl) return;
+
+        const now = new Date();
+        const diffTime = this.examDate - now;
+
+        if (diffTime <= 0) {
+            countdownEl.innerHTML = "<span style='color: var(--roblox-red);'>¡Llegó el Mes del Examen! (Octubre 2026) 📅</span>";
+            return;
+        }
+
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffWeeks = Math.floor(diffDays / 7);
+        const remainingDays = diffDays % 7;
+
+        countdownEl.innerHTML = `
+            <div style="font-weight: 700; color: #1a202c; font-size: 16px;">
+                Faltan <span style="color: var(--roblox-red); font-size: 20px;">${diffWeeks} semanas</span> y <span style="color: var(--roblox-red); font-size: 20px;">${remainingDays} días</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                Fecha objetivo: 15 de Octubre, 2026 (Validación Mineduc, Chile)
+            </div>
+        `;
+    },
+
+    // 📚 CARGAR Y GUARDAR PÁGINAS DE LIBROS
+    loadBookPages() {
+        const defaultPages = {
+            supermatematicos: 56,
+            jugandoSonidos: 49,
+            caligrafia: 75
+        };
+
+        const saved = localStorage.getItem('eliu_aprende_paginas');
+        const pages = saved ? JSON.parse(saved) : defaultPages;
+
+        document.getElementById('page-supermatematicos').value = pages.supermatematicos;
+        document.getElementById('page-jugandosonidos').value = pages.jugandoSonidos;
+        document.getElementById('page-caligrafia').value = pages.caligrafia;
+    },
+
+    saveBookPages() {
+        const supermatematicos = parseInt(document.getElementById('page-supermatematicos').value) || 56;
+        const jugandoSonidos = parseInt(document.getElementById('page-jugandosonidos').value) || 49;
+        const caligrafia = parseInt(document.getElementById('page-caligrafia').value) || 75;
+
+        const pages = {
+            supermatematicos,
+            jugandoSonidos,
+            caligrafia
+        };
+
+        localStorage.setItem('eliu_aprende_paginas', JSON.stringify(pages));
+        SoundManager.play('success');
+        alert("¡Páginas de los libros actualizadas! Las tareas recomendadas de Eliu en su pantalla principal se adaptarán de inmediato. 📘🔢✍️");
+        
+        // Actualizar dashboard infantil
+        if (typeof Gamification !== 'undefined') {
+            Gamification.renderKidsDashboard();
+        }
+    },
+
+    getBookPages() {
+        const defaultPages = {
+            supermatematicos: 56,
+            jugandoSonidos: 49,
+            caligrafia: 75
+        };
+        const saved = localStorage.getItem('eliu_aprende_paginas');
+        return saved ? JSON.parse(saved) : defaultPages;
+    },
+
+    // 📈 ESTADÍSTICAS Y PROGRESO DE EXAMEN
+    renderParentStats() {
+        const entries = DiaryManager.getEntries();
+        const lecciones = this.getCompletedLessons();
+        const totalEstrellas = localStorage.getItem('eliu_aprende_estrellas') || 0;
+        const racha = localStorage.getItem('eliu_aprende_racha') || 0;
+
+        document.getElementById('parent-stat-diarios').innerText = entries.length;
+        document.getElementById('parent-stat-lecciones').innerText = lecciones.length;
+        document.getElementById('parent-stat-estrellas').innerText = totalEstrellas;
+        document.getElementById('parent-stat-racha').innerText = `${racha} días`;
+    },
+
+    getCompletedLessons() {
+        const data = localStorage.getItem('eliu_aprende_lecciones_completas');
+        return data ? JSON.parse(data) : [];
+    },
+
+    renderSubjectProgress() {
+        const completed = this.getCompletedLessons();
+        
+        // Contar el total por materia
+        const subjects = {
+            lenguaje: { total: 2, completed: 0, color: 'var(--color-lenguaje)' },
+            matematica: { total: 1, completed: 0, color: 'var(--color-matematica)' },
+            ciencias: { total: 1, completed: 0, color: 'var(--color-ciencias)' },
+            historia: { total: 1, completed: 0, color: 'var(--color-historia)' }
+        };
+
+        completed.forEach(lId => {
+            if (lId.startsWith('lenguaje')) subjects.lenguaje.completed++;
+            if (lId.startsWith('matematica')) subjects.matematica.completed++;
+            if (lId.startsWith('ciencias')) subjects.ciencias.completed++;
+            if (lId.startsWith('historia')) subjects.historia.completed++;
+        });
+
+        const listContainer = document.getElementById('parent-subject-progress');
+        if (!listContainer) return;
+
+        listContainer.innerHTML = Object.keys(subjects).map(key => {
+            const sub = subjects[key];
+            const name = key.charAt(0).toUpperCase() + key.slice(1);
+            const percent = Math.round((sub.completed / sub.total) * 100);
+
+            let subjectLabel = "Matemática";
+            if (key === 'lenguaje') subjectLabel = "Lenguaje y Fónica";
+            if (key === 'ciencias') subjectLabel = "Ciencias Naturales";
+            if (key === 'historia') subjectLabel = "Historia, Geografía y Sociedad";
+
+            return `
+                <div class="subject-progress-row">
+                    <div class="subject-progress-info">
+                        <span>${subjectLabel}</span>
+                        <span>${sub.completed}/${sub.total} Lecciones (${percent}%)</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: ${percent}%; background-color: ${sub.color};"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    // 🖼️ GALERÍA DE ARTE COMPLETA PARA PADRES
+    renderParentGallery() {
+        const container = document.getElementById('parent-diary-list');
+        if (!container) return;
+
+        const entries = DiaryManager.getEntries();
+        if (entries.length === 0) {
+            container.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 32px 16px;">
+                    <span style="font-size: 64px;">🎨</span>
+                    <p style="margin-top: 12px; font-weight: 700; font-size: 18px;">¡Aún no hay obras de arte registradas!</p>
+                    <p>El historial de dibujos y bitácoras del diario de Eliu aparecerá completo aquí.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = entries.map(entry => {
+            let emoji = '🤖';
+            if (entry.emocion === 'feliz') emoji = '😄 Feliz';
+            if (entry.emocion === 'increible') emoji = '🤩 Super';
+            if (entry.emocion === 'cansado') emoji = '😴 Cansado';
+            if (entry.emocion === 'triste') emoji = '😢 Triste';
+            if (entry.emocion === 'divertido') emoji = '🤪 Divertido';
+
+            return `
+                <div class="diary-item-card" id="card_${entry.id}">
+                    <div class="diary-item-header">
+                        <span>${entry.fecha}</span>
+                        <span>${emoji}</span>
+                    </div>
+                    <img class="diary-item-thumb" src="${entry.dibujo}" alt="Dibujo de Eliu">
+                    <p class="diary-item-text">"${entry.nota}"</p>
+                    <div class="diary-item-actions">
+                        <button class="btn-download-art" onclick="ParentDashboard.downloadArtwork('${entry.dibujo}', '${entry.id}')">
+                            💾 Guardar Dibujo
+                        </button>
+                        <button class="btn-delete-entry" onclick="ParentDashboard.deleteEntryConfirm('${entry.id}')">
+                            🗑️ Borrar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    // Guardar imagen en PNG localmente
+    downloadArtwork(base64Data, id) {
+        const link = document.createElement('a');
+        link.href = base64Data;
+        link.download = `dibujo_eliu_aprende_${id}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        SoundManager.play('success');
+    },
+
+    deleteEntryConfirm(id) {
+        if (confirm("¿Estás seguro de que deseas eliminar permanentemente esta entrada de diario? Esto borrará el dibujo y la emoción de este día.")) {
+            DiaryManager.deleteEntry(id);
+            this.renderParentGallery();
+            this.renderParentStats();
+        }
+    },
+
+    // 💾 EXPORTACIÓN DE RESPALDO COMPLETO A ARCHIVO LOCAL JSON
+    exportBackup() {
+        const backupData = {
+            diarios: DiaryManager.getEntries(),
+            leccionesCompletas: this.getCompletedLessons(),
+            paginasLibros: this.getBookPages(),
+            estrellas: localStorage.getItem('eliu_aprende_estrellas') || 0,
+            racha: localStorage.getItem('eliu_aprende_racha') || 0,
+            stickersColocados: localStorage.getItem('eliu_aprende_stickers_colocados') || '[]',
+            stickersDesbloqueados: localStorage.getItem('eliu_aprende_stickers_desbloqueados') || '[]',
+            velocidadVoz: localStorage.getItem('eliu_aprende_velocidad_voz') || '0.75',
+            planSemanal: localStorage.getItem('eliu_aprende_plan_semanal') || '[]',
+            fechaRespaldo: new Date().toISOString()
+        };
+
+        const jsonString = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const dateStr = new Date().toISOString().split('T')[0];
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `eliu_aprende_respaldo_${dateStr}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        SoundManager.play('success');
+        alert("¡Historial exportado con éxito! Se ha descargado un archivo de seguridad .json en tu dispositivo. Guárdalo bien 🛡️");
+    },
+
+    // 📤 IMPORTACIÓN DE RESPALDO LOCAL JSON
+    importBackup(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = JSON.parse(event.target.result);
+                
+                // Validación básica de estructura
+                if (!data.diarios || !data.paginasLibros) {
+                    throw new Error("El archivo no tiene el formato correcto de Eliu Aprende");
+                }
+
+                // Confirmar antes de sobreescribir
+                if (confirm("¡Se encontró un respaldo válido! Se importarán " + data.diarios.length + " dibujos del diario y su progreso acumulado de estudio. ¿Deseas sobreescribir los datos actuales?")) {
+                    localStorage.setItem('eliu_aprende_diarios', JSON.stringify(data.diarios));
+                    localStorage.setItem('eliu_aprende_lecciones_completas', JSON.stringify(data.leccionesCompletas || []));
+                    localStorage.setItem('eliu_aprende_paginas', JSON.stringify(data.paginasLibros));
+                    localStorage.setItem('eliu_aprende_estrellas', data.estrellas || 0);
+                    localStorage.setItem('eliu_aprende_racha', data.racha || 0);
+                    localStorage.setItem('eliu_aprende_stickers_colocados', data.stickersColocados || '[]');
+                    localStorage.setItem('eliu_aprende_stickers_desbloqueados', data.stickersDesbloqueados || '[]');
+                    localStorage.setItem('eliu_aprende_velocidad_voz', data.velocidadVoz || '0.75');
+                    if (data.planSemanal) {
+                        localStorage.setItem('eliu_aprende_plan_semanal', typeof data.planSemanal === 'string' ? data.planSemanal : JSON.stringify(data.planSemanal));
+                    }
+
+                    // Recargar todo el panel y vistas
+                    this.init();
+                    DiaryManager.init();
+                    if (typeof Gamification !== 'undefined') {
+                        Gamification.init();
+                    }
+
+                    SoundManager.play('success');
+                    alert("¡Carga completada! Todos los datos, el historial de dibujos y el avance del examen libre han sido restaurados con éxito 🤖🎉");
+                }
+            } catch (err) {
+                alert("Error al cargar el archivo de respaldo: " + err.message + "\nAsegúrate de seleccionar un archivo válido de respaldo de Eliu Aprende (.json)");
+            }
+        };
+        reader.readAsText(file);
+        
+        // Resetear input file
+        e.target.value = '';
+    },
+
+    // 🔊 MÉTODOS DE AJUSTES DE VOZ DE ELIUBOT
+    loadVoiceSettings() {
+        const savedSpeed = localStorage.getItem('eliu_aprende_velocidad_voz');
+        const speed = savedSpeed ? parseFloat(savedSpeed) : 0.75;
+        const speedSlider = document.getElementById('voice-speed-slider');
+        if (speedSlider) {
+            speedSlider.value = speed;
+            this.updateVoiceSpeedLabel(speed);
+        }
+
+        const savedVol = localStorage.getItem('eliu_aprende_volumen_voz');
+        const vol = savedVol !== null ? parseFloat(savedVol) : 1.0;
+        const volSlider = document.getElementById('voice-volume-slider');
+        if (volSlider) {
+            volSlider.value = vol;
+            this.updateVoiceVolumeLabel(vol);
+        }
+
+        const savedKey = localStorage.getItem('eliu_aprende_eleven_key') || '';
+        const savedId = localStorage.getItem('eliu_aprende_eleven_id') || '';
+        const keyInput = document.getElementById('voice-eleven-key');
+        const idInput = document.getElementById('voice-eleven-id');
+        if (keyInput) keyInput.value = savedKey;
+        if (idInput) idInput.value = savedId;
+
+        const savedGemini = localStorage.getItem('eliu_aprende_gemini_key') || '';
+        const geminiInput = document.getElementById('voice-gemini-key');
+        if (geminiInput) geminiInput.value = savedGemini;
+    },
+
+    updateVoiceSpeedLabel(val) {
+        const label = document.getElementById('lbl-voice-speed');
+        if (!label) return;
+        
+        let speedText = "Pausada";
+        if (val <= 0.5) speedText = "Súper Lenta";
+        else if (val <= 0.65) speedText = "Muy Lenta";
+        else if (val >= 0.9) speedText = "Normal";
+        
+        label.innerText = `${speedText} (${val.toFixed(2)}x)`;
+    },
+
+    updateVoiceVolumeLabel(val) {
+        const label = document.getElementById('lbl-voice-volume');
+        if (label) label.innerText = `${Math.round(val * 100)}%`;
+    },
+
+    saveVoiceSpeed(val) {
+        localStorage.setItem('eliu_aprende_velocidad_voz', val);
+        this.updateVoiceSpeedLabel(val);
+        SoundManager.play('success');
+    },
+
+    saveVoiceVolume(val) {
+        localStorage.setItem('eliu_aprende_volumen_voz', val);
+        this.updateVoiceVolumeLabel(val);
+        SoundManager.play('success');
+    },
+
+    saveElevenSettings() {
+        const keyInput = document.getElementById('voice-eleven-key');
+        const idInput = document.getElementById('voice-eleven-id');
+        const geminiInput = document.getElementById('voice-gemini-key');
+        if (keyInput) localStorage.setItem('eliu_aprende_eleven_key', keyInput.value.trim());
+        if (idInput) localStorage.setItem('eliu_aprende_eleven_id', idInput.value.trim());
+        if (geminiInput) localStorage.setItem('eliu_aprende_gemini_key', geminiInput.value.trim());
+    },
+
+    testEliubotVoice() {
+        SoundManager.play('click');
+        // Simular habla de Eliubot
+        if (typeof VoiceEngine !== 'undefined') {
+            VoiceEngine.speak("¡Hola Eliu! Estoy hablando muy pausado y claro para que me entiendas súper bien. ¡Sigamos aprendiendo bloques!");
+        }
+    },
+
+    // 📅 MÉTODOS DE PLANIFICACIÓN SEMANAL DE ESTUDIO
+    getWeeklyPlan() {
+        const saved = localStorage.getItem('eliu_aprende_plan_semanal');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                // Si el formato es antiguo (no tiene tasks), lo convertimos al nuevo formato
+                if (parsed.length > 0 && !parsed[0].hasOwnProperty('tasks')) {
+                    throw new Error("Formato antiguo");
+                }
+                return parsed;
+            } catch (e) {
+                // Fallback / Reset al nuevo plan con 2 materias
+            }
+        }
+        
+        // Plan por defecto con al menos dos materias por día
+        const defaultPlan = [
+            {
+                day: "Lunes",
+                tasks: [
+                    { id: "lunes_1", subject: "lenguaje", subjectName: "Lenguaje", badgeColor: "var(--color-lenguaje)", icon: "📘", book: "Jugando con los Sonidos 3", pageKey: "jugandoSonidos", goal: "Separar palabras en sílabas y buscar rimas.", checked: false },
+                    { id: "lunes_2", subject: "matematica", subjectName: "Caligrafía Números", badgeColor: "var(--color-matematica)", icon: "✍️", book: "Caligrafía 1° Básico", pageKey: "caligrafia", goal: "Trazar los números del 1 al 10 en cuadrícula.", checked: false }
+                ]
+            },
+            {
+                day: "Martes",
+                tasks: [
+                    { id: "martes_1", subject: "matematica", subjectName: "Matemática", badgeColor: "var(--color-matematica)", icon: "🔢", book: "Supermatemáticos 1", pageKey: "supermatematicos", goal: "Aprender a juntar bloques y sumar números.", checked: false },
+                    { id: "martes_2", subject: "lenguaje", subjectName: "Caligrafía Letras", badgeColor: "var(--color-lenguaje)", icon: "✍️", book: "Caligrafía 1° Básico", pageKey: "caligrafia", goal: "Trazar vocales y consonantes M y P.", checked: false }
+                ]
+            },
+            {
+                day: "Miércoles",
+                tasks: [
+                    { id: "miercoles_1", subject: "ciencias", subjectName: "Ciencias", badgeColor: "var(--color-ciencias)", icon: "🌿", book: "Ciencias 1° Básico", pageKey: "ciencias", goal: "Sentidos del cuerpo y el búho Tucúquere.", checked: false },
+                    { id: "miercoles_2", subject: "lenguaje", subjectName: "Lectura Vocal", badgeColor: "var(--color-lenguaje)", icon: "📖", book: "Jugando con los Sonidos 3", pageKey: "jugandoSonidos", goal: "Reconocer el sonido inicial de palabras.", checked: false }
+                ]
+            },
+            {
+                day: "Jueves",
+                tasks: [
+                    { id: "jueves_1", subject: "historia", subjectName: "Historia", badgeColor: "var(--color-historia)", icon: "🗺️", book: "Historia 1° Básico", pageKey: "historia", goal: "Días de la semana y la bandera chilena.", checked: false },
+                    { id: "jueves_2", subject: "matematica", subjectName: "Matemática Bloques", badgeColor: "var(--color-matematica)", icon: "🔢", book: "Supermatemáticos 1", pageKey: "supermatematicos", goal: "Contar colecciones y agrupar en decenas.", checked: false }
+                ]
+            },
+            {
+                day: "Viernes",
+                tasks: [
+                    { id: "viernes_1", subject: "lenguaje", subjectName: "Caligrafía", badgeColor: "var(--color-lenguaje)", icon: "✍️", book: "Caligrafía 1° Básico", pageKey: "caligrafia", goal: "Trazar consonantes en triple renglón.", checked: false },
+                    { id: "viernes_2", subject: "ciencias", subjectName: "Ciencias Plantas", badgeColor: "var(--color-ciencias)", icon: "🌿", book: "Ciencias 1° Básico", pageKey: "ciencias", goal: "Identificar partes de una planta y hojas.", checked: false }
+                ]
+            }
+        ];
+        this.saveWeeklyPlan(defaultPlan);
+        return defaultPlan;
+    },
+
+    saveWeeklyPlan(plan) {
+        localStorage.setItem('eliu_aprende_plan_semanal', JSON.stringify(plan));
+    },
+
+    renderWeeklyPlanner() {
+        const grid = document.getElementById('parent-weekly-planner-grid');
+        if (!grid) return;
+        
+        const plan = this.getWeeklyPlan();
+        const bookPages = this.getBookPages();
+        
+        // Calcular porcentaje completado
+        let totalTasks = 0;
+        let completedTasks = 0;
+        plan.forEach(day => {
+            day.tasks.forEach(task => {
+                totalTasks++;
+                if (task.checked) completedTasks++;
+            });
+        });
+        const percent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+        
+        document.getElementById('weekly-progress-percent').innerText = `${percent}%`;
+        document.getElementById('weekly-progress-fill').style.width = `${percent}%`;
+        
+        // Obtener el día actual (0 es Domingo, 1 Lunes, 5 Viernes, etc.)
+        const todayNum = new Date().getDay();
+        const dayMap = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+        const todayName = dayMap[todayNum];
+        
+        grid.innerHTML = plan.map((dayItem, dayIdx) => {
+            const isToday = dayItem.day === todayName;
+            const activeClass = isToday ? 'active-day' : '';
+            
+            // Renderizar las misiones del día
+            const tasksHtml = dayItem.tasks.map((task, taskIdx) => {
+                // Obtener número de página dinámicamente si aplica
+                let pageText = "";
+                if (task.pageKey === "supermatematicos") pageText = ` (Pág. ${bookPages.supermatematicos})`;
+                if (task.pageKey === "jugandoSonidos") pageText = ` (Pág. ${bookPages.jugandoSonidos})`;
+                if (task.pageKey === "caligrafia") pageText = ` (Pág. ${bookPages.caligrafia})`;
+                
+                return `
+                    <div class="weekly-task-item" style="border-left: 4px solid ${task.badgeColor}; padding-left: 10px; margin-bottom: 12px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span class="weekly-day-subject-badge" style="background-color: ${task.badgeColor}; font-size: 10px; padding: 2px 6px;">${task.subjectName}</span>
+                        </div>
+                        <div style="font-weight: 700; color: var(--text-main); font-size: 13px; margin-bottom: 2px;">
+                            ${task.icon} ${task.book}${pageText}
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">${task.goal}</div>
+                        <label class="weekly-day-checkbox-label" style="margin-top: 4px; font-size: 12px;">
+                            <input type="checkbox" class="weekly-day-checkbox-input" 
+                                   ${task.checked ? 'checked' : ''} 
+                                   onchange="ParentDashboard.toggleWeeklyDayCheck(${dayIdx}, ${taskIdx})">
+                            <span>¡Meta lograda! ⭐</span>
+                        </label>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="weekly-day-card ${activeClass}" style="display: flex; flex-direction: column; gap: 8px; padding: 14px;">
+                    <div class="weekly-day-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 8px;">
+                        <span class="weekly-day-name" style="font-size: 16px; font-weight: 800;">${dayItem.day}</span>
+                        ${isToday ? '<span style="background: var(--roblox-red); color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-family: var(--font-parents); font-weight: 700; margin-left: 8px;">HOY</span>' : ''}
+                    </div>
+                    <div class="weekly-day-body" style="flex: 1;">
+                        ${tasksHtml}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    toggleWeeklyDayCheck(dayIdx, taskIdx) {
+        const plan = this.getWeeklyPlan();
+        plan[dayIdx].tasks[taskIdx].checked = !plan[dayIdx].tasks[taskIdx].checked;
+        this.saveWeeklyPlan(plan);
+        this.renderWeeklyPlanner();
+        this.renderParentStats();
+        SoundManager.play('success');
+        
+        // Recargar dashboard infantil para ver actualización
+        if (typeof Gamification !== 'undefined') {
+            Gamification.renderKidsDashboard();
+        }
+    }
+};

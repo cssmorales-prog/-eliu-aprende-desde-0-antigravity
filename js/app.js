@@ -352,15 +352,16 @@ const AudioRecordingEngine = {
             this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             
             // Elegir el tipo de archivo soportado
-            let mimeType = 'audio/webm';
-            if (!MediaRecorder.isTypeSupported(mimeType)) {
-                mimeType = 'audio/ogg';
-            }
-            if (!MediaRecorder.isTypeSupported(mimeType)) {
-                mimeType = 'audio/wav';
+            let options = {};
+            if (MediaRecorder.isTypeSupported('audio/webm')) {
+                options = { mimeType: 'audio/webm' };
+            } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                options = { mimeType: 'audio/mp4' };
+            } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+                options = { mimeType: 'audio/ogg' };
             }
             
-            this.mediaRecorder = new MediaRecorder(this.stream, { mimeType });
+            this.mediaRecorder = new MediaRecorder(this.stream, options);
             this.audioChunks = [];
 
             this.mediaRecorder.ondataavailable = (event) => {
@@ -779,7 +780,7 @@ const ReadingManager = {
             App.triggerConfetiExplosion();
             
             setTimeout(() => {
-                VideoCallSystem.triggerCall(story.title);
+                App.showView('kids-dashboard-view');
             }, 1000);
         };
     }
@@ -1625,10 +1626,10 @@ const App = {
         // Celebración animada de confeti
         this.triggerConfetiExplosion();
 
-        // Disparar videollamada de Eliubot
+        // Regresar al dashboard despus de celebrar
         setTimeout(() => {
-            VideoCallSystem.triggerCall(lesson.title);
-        }, 1500);
+            App.showView('kids-dashboard-view');
+        }, 3000);
     },
 
     // 🎉 ANIMACIÓN SINTÉTICA DE CONFETI EN PANTALLA

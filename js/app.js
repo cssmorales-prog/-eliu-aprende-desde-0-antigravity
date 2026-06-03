@@ -1364,10 +1364,12 @@ const App = {
 
         // Entrada a Zona de Padres
         document.getElementById('btn-go-parents').addEventListener('click', () => {
-            this.showView('parent-dashboard-view');
-            ParentDashboard.renderParentStats();
-            ParentDashboard.renderSubjectProgress();
-            ParentDashboard.renderParentGallery();
+            ParentDashboard.triggerMathLock(() => {
+                this.showView('parent-dashboard-view');
+                ParentDashboard.renderParentStats();
+                ParentDashboard.renderSubjectProgress();
+                ParentDashboard.renderParentGallery();
+            });
         });
 
         document.getElementById('btn-back-to-kids').addEventListener('click', () => {
@@ -2904,7 +2906,7 @@ window.addEventListener('DOMContentLoaded', () => {
     App.init();
 
     if (lastHabitsDate !== todayStr) {
-        //HabitsManager.startCheckin(); App.showView('kids-dashboard-view');
+        HabitsManager.startCheckin();
     } else {
         App.showView('kids-dashboard-view');
     }

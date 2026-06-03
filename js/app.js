@@ -1256,24 +1256,6 @@ const VideoCallSystem = {
         VoiceEngine.stop();
         App.showView('kids-dashboard-view');
     }
-};      });
-    },
-
-    endCall() {
-        clearInterval(this.ringTimer);
-        if (this.guidedListenTimer) {
-            clearTimeout(this.guidedListenTimer);
-            this.guidedListenTimer = null;
-        }
-        this.isSandboxCall = false;
-        this.silenceTimeoutCount = 0;
-        SpeechRecognitionEngine.stop();
-        VoiceEngine.stop();
-        document.getElementById('videocall-overlay').classList.remove('active');
-        
-        // Volver a la isla de inicio
-        App.showView('kids-dashboard-view');
-    }
 };
 
 // 🎮 ORQUESTRADOR PRINCIPAL Y SPA ROUTER

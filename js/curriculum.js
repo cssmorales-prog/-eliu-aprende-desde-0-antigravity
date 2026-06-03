@@ -17,53 +17,52 @@ const curriculumData = {
         lessons: [
             {
                 id: "lenguaje_1",
-                title: "Jugando con las Sílabas",
+                title: "Secuencias Vocálicas (A-E-A)",
                 bookRef: "Jugando con los Sonidos 3",
-                basePage: 49,
-                description: "¡Vamos a aplaudir y contar los trocitos de las palabras!",
-                narrative: "¡Hola Eliu! Soy Eliubot, y hoy he traído a tu súper cachorro favorito: ¡Marshall de Paw Patrol! Marshall es bombero 🐕‍🚒 y doctor 🚑, y hoy nos ayudará en tu libro 'Jugando con los Sonidos 3', en la página 49. Nos enseñará a separar las palabras en trocitos que se llaman sílabas. ¡Es como contar las mangueras de agua en la estación! Cada sílaba es un aplauso o un ladridito de cachorro: ¡Guau! Por ejemplo, la palabra 'Plataforma' tiene cuatro aplausos: pla-ta-for-ma. ¡Hagamos unos aplausos juntos!",
+                basePage: 54,
+                description: "¡Encuentra palabras que tengan la secuencia A - E - A!",
+                narrative: "¡Hola Eliu! Soy Eliubot. Hoy en tu libro 'Jugando con los Sonidos 3', página 54, nos vamos de cacería de vocales con Chase. El patrón mágico de hoy es A - E - A. Así como en la palabra 'Ga-lle-ta'. ¡Guau! Tenemos que encontrar todas las palabras secretas que suenen igual de divertidas en su guatita vocálica.",
                 questions: [
                     {
                         type: "multiple",
-                        prompt: "¿Cuántos trocitos (sílabas) tiene la palabra 'BOMBERO'? ¡Aplaude fuerte con Marshall! BOM - BE - RO.",
+                        prompt: "Escucha bien: Ga-lle-ta (A - E - A). ¿Qué otra palabra tiene la misma secuencia vocálica?",
                         options: [
-                            { text: "1 aplauso", correct: false },
-                            { text: "2 aplausos", correct: false },
-                            { text: "3 aplausos ¡Súper Guau, correcto! 🐕‍🚒", correct: true }
+                            { text: "Mo-chi-la", correct: false },
+                            { text: "Ba-lle-na ¡Guau, correcto! 🐳", correct: true },
+                            { text: "Ca-mi-sa", correct: false }
                         ],
-                        synonymsExplain: "¡Excelente! Bombero tiene 3 sílabas, que son los 'trocitos' o 'partes' en las que dividimos la palabra al hablar."
+                        synonymsExplain: "¡Súper Guau! Ballena tiene las vocales a-e-a, ¡igualito que galleta!"
                     },
                     {
                         type: "multiple",
-                        prompt: "Encuentra la palabra que rima (suena igual al final) con 'MARSHALL' (tu cachorro bombero):",
+                        prompt: "¿Cuál de estas palabras también tiene el patrón mágico A - E - A?",
                         options: [
-                            { text: "Zapato", correct: false },
-                            { text: "Avión", correct: false },
-                            { text: "Estación ¡Súper Rima! 🚒", correct: true }
+                            { text: "Ma-le-ta ¡Muy bien! 🧳", correct: true },
+                            { text: "Ti-je-ra", correct: false },
+                            { text: "Pe-lo-ta", correct: false }
                         ],
-                        synonymsExplain: "¡Eso! Marshall y Estación suenan muy bien juntos y riman porque terminan con un sonido similar de rescate."
+                        synonymsExplain: "¡Eso! Maleta también esconde el patrón A-E-A. Eres un súper investigador de sonidos."
                     }
                 ]
             },
             {
                 id: "lenguaje_2",
-                title: "Trazando Letras Mágicas",
+                title: "Trazando Palabras",
                 bookRef: "Caligrafía 1° Básico",
-                basePage: 75,
-                description: "Aprende a trazar letras en la cuadrícula de triple renglón.",
-                narrative: "¡Eliu, es hora de escribir! Marshall el bombero tiene su manguera roja lista. En la página 75 de tu cuaderno de 'Caligrafía', estamos trazando letras hermosas. Para escribir súper bien, imagina que la cuadrícula es una pista de rescate de Paw Patrol: ¡tiene cielo, pasto y tierra! La letra 'M' de Marshall sube al cielo y baja al pasto. ¡Usa tu pincel digital en el diario mágico para trazar la letra de Marshall!",
+                basePage: 90,
+                description: "Aprende a trazar letras y palabras en la cuadrícula.",
+                narrative: "¡Eliu, es hora de escribir! En la página 90 de tu cuaderno de 'Caligrafía', estamos trazando palabras súper importantes. Recuerda subir al cielo, bajar al pasto y, a veces, ¡tocar la tierra! Eres el mejor escribiendo.",
                 isCaligrafia: true,
-                letterToTrace: "M",
+                letterToTrace: "palabras mágicas",
                 questions: [
                     {
                         type: "multiple",
-                        prompt: "¿Con qué letra de la Patrulla Canina empieza el nombre de tu cachorro favorito 'MARSHALL'?",
+                        prompt: "Cuando escribimos con letra ligada (manuscrita), ¿qué hacemos con el lápiz?",
                         options: [
-                            { text: "Con la letra L", correct: false },
-                            { text: "Con la letra M ¡Maravilloso! ✍️", correct: true },
-                            { text: "Con la letra S", correct: false }
+                            { text: "Lo levantamos a cada rato", correct: false },
+                            { text: "Lo mantenemos en el papel sin soltarlo ¡Excelente! ✍️", correct: true }
                         ],
-                        synonymsExplain: "¡Exacto! El nombre de Marshall comienza con M. La letra M también se conoce como la letra de 'Mamá' o 'Monito'."
+                        synonymsExplain: "¡Exacto! Al escribir juntito no levantamos el lápiz hasta terminar la palabra."
                     }
                 ]
             }
@@ -80,31 +79,31 @@ const curriculumData = {
         lessons: [
             {
                 id: "matematica_1",
-                title: "Super Bloques: Sumar es Juntar",
+                title: "Super Restas: Quitar Bloques",
                 bookRef: "Supermatemáticos 1",
-                basePage: 56,
-                description: "Suma y une bloques Roblox en la página 56.",
-                narrative: "¡Eliu! Marshall el bombero necesita apagar un pequeño fuego de bloques en la página 56 de tu libro 'Supermatemáticos 1'. ¡Nos convertimos en súper constructores! Sumar significa 'juntar', 'reunir' o 'agregar' bloques de agua para apagar el incendio. Si Marshall tiene 5 bloques de agua rojos y Chase le regala 3 bloques azules, ¡hacemos una torre más alta! Vamos a contar cuántos bloques tenemos en total.",
+                basePage: 59,
+                description: "Resta y quita bloques en la página 59.",
+                narrative: "¡Eliu! Marshall el bombero tiene una misión en la página 59 de tu libro 'Supermatemáticos 1'. ¡Hoy vamos a RESTAR! Restar significa 'quitar' o 'sacar' bloques. Si Marshall tiene 8 bloques de agua y usa 3 para apagar el fuego, ¡nos quedan menos bloques! Vamos a ver cuántos quedan.",
                 questions: [
                     {
                         type: "multiple",
-                        prompt: "Marshall tiene 5 bloques de agua en su camión 🚒 y su amigo Chase le regala 3 bloques azules. ¿Cuántos bloques tiene si los 'JUNTO' todos?",
+                        prompt: "Marshall tenía 8 bloques de agua 🚒 y usó 3 para apagar el fuego. ¿Cuántos bloques le 'QUEDAN'?",
                         options: [
-                            { text: "7 bloques", correct: false },
-                            { text: "8 bloques ¡Eres un Supermatemático de Paw Patrol! 🏆", correct: true },
-                            { text: "9 bloques", correct: false }
+                            { text: "4 bloques", correct: false },
+                            { text: "5 bloques ¡Eres un Supermatemático! 🏆", correct: true },
+                            { text: "6 bloques", correct: false }
                         ],
-                        synonymsExplain: "¡Excelente! 5 juntado con 3 nos da 8. Juntar es el sinónimo de 'sumar' o 'adicionar' bloques."
+                        synonymsExplain: "¡Excelente! A 8 le quitamos 3 y nos quedan 5. Restar es el sinónimo de 'quitar' o 'sustraer'."
                     },
                     {
                         type: "multiple",
-                        prompt: "Mira el patrón en los vehículos de rescate: 🚒 🚑 🚒 🚑 ¿Qué vehículo sigue ahora?",
+                        prompt: "Si tienes 10 bloques de Roblox y te quitan 4, ¿cuántos te quedan?",
                         options: [
-                            { text: "Un helicóptero de Skye 🚁", correct: false },
-                            { text: "Un camión de bomberos 🚒 ¡Súper bien!", correct: true },
-                            { text: "Un auto de policía 🚓", correct: false }
+                            { text: "6 bloques ¡Súper bien!", correct: true },
+                            { text: "5 bloques", correct: false },
+                            { text: "7 bloques", correct: false }
                         ],
-                        synonymsExplain: "¡Gran trabajo! El patrón se repite: camión de bomberos, ambulancia, camión, ambulancia... ¡así que sigue el camión de bomberos 🚒! Un patrón es un 'orden repetido' de elementos."
+                        synonymsExplain: "¡Gran trabajo! 10 menos 4 es 6. ¡Tu cerebro es una súper computadora matemática!"
                     }
                 ]
             }

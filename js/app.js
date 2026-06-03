@@ -2922,7 +2922,7 @@ window.addEventListener('DOMContentLoaded', () => {
     App.init();
 
     if (lastHabitsDate !== todayStr) {
-        HabitsManager.startCheckin();
+        //HabitsManager.startCheckin(); App.showView('kids-dashboard-view');
     } else {
         App.showView('kids-dashboard-view');
     }

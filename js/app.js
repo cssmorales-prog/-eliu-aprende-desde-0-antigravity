@@ -407,15 +407,14 @@ const AudioRecordingEngine = {
     },
 
     cancel() {
-        if (this.mediaRecorder && this.isRecording) {
-            this.mediaRecorder.onstop = null;
-            this.mediaRecorder.stop();
-        }
+        if (!this.isRecording || !this.mediaRecorder) return;
+        this.mediaRecorder.onstop = null;
+        this.mediaRecorder.stop();
+        this.isRecording = false;
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
             this.stream = null;
         }
-        this.isRecording = false;
     }
 };
 
@@ -1383,12 +1382,10 @@ const App = {
 
         // Entrada a Zona de Padres
         document.getElementById('btn-go-parents').addEventListener('click', () => {
-            ParentDashboard.triggerMathLock(() => {
-                this.showView('parent-dashboard-view');
-                ParentDashboard.renderParentStats();
-                ParentDashboard.renderSubjectProgress();
-                ParentDashboard.renderParentGallery();
-            });
+            this.showView('parent-dashboard-view');
+            ParentDashboard.renderParentStats();
+            ParentDashboard.renderSubjectProgress();
+            ParentDashboard.renderParentGallery();
         });
 
         document.getElementById('btn-back-to-kids').addEventListener('click', () => {

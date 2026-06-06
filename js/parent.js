@@ -689,6 +689,8 @@ const ParentDashboard = {
             this.renderSubjectProgress();
             this.renderParentGallery();
             this.renderWeeklyPlanner();
+        } else if (tabId === 'tab-avance-temario') {
+            this.renderAvanceTemario();
         } else if (tabId === 'tab-habitos') {
             this.renderHabitsCalendar();
         } else if (tabId === 'tab-chats') {
@@ -697,6 +699,100 @@ const ParentDashboard = {
             this.renderCofreAudios();
         } else if (tabId === 'tab-patrones') {
             this.renderAIPatterns();
+        }
+    },
+
+    // 📈 RENDERIZAR TAB AVANCE TEMARIO (FASE 3)
+    async renderAvanceTemario() {
+        const container = document.getElementById('parent-avance-temario-container');
+        if (!container) return;
+
+        if (typeof supabaseClient === 'undefined') {
+            container.innerHTML = '<div style="color:var(--roblox-red); padding: 20px; font-weight: bold;">⚠️ Supabase no está conectado. Verifica tu conexión.</div>';
+            return;
+        }
+
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Cargando OAs desde la base de datos... ⏳</div>';
+
+        try {
+            const { data, error } = await supabaseClient
+                .from('vista_panel_padres')
+                .select('*')
+                .order('materia', { ascending: true })
+                .order('oa_codigo', { ascending: true });
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">No hay datos de OAs registrados en la base de datos.</div>';
+                return;
+            }
+
+            // Agrupar por materia
+            const materiasObj = {};
+            data.forEach(row => {
+                const mat = row.materia || 'Otra';
+                if (!materiasObj[mat]) materiasObj[mat] = [];
+                materiasObj[mat].push(row);
+            });
+
+            let html = '';
+            const order = ['Lenguaje', 'Matemática', 'Ciencias', 'Historia'];
+            const sortedMaterias = Object.keys(materiasObj).sort((a, b) => {
+                const ia = order.indexOf(a);
+                const ib = order.indexOf(b);
+                return (ia > -1 ? ia : 99) - (ib > -1 ? ib : 99);
+            });
+
+            sortedMaterias.forEach(mat => {
+                const rows = materiasObj[mat];
+                let matColor = "var(--text-main)";
+                if (mat === 'Lenguaje') matColor = "var(--color-lenguaje)";
+                if (mat === 'Matemática') matColor = "var(--color-matematica)";
+                if (mat === 'Ciencias') matColor = "var(--color-ciencias)";
+                if (mat === 'Historia') matColor = "var(--color-historia)";
+
+                html += `<h4 style="margin-top: 20px; margin-bottom: 10px; color: ${matColor}; font-size: 16px; border-bottom: 2px solid ${matColor}; padding-bottom: 6px; font-weight: 800;">📚 ${mat}</h4>`;
+                
+                rows.forEach(oa => {
+                    let statusEmoji = '⏳';
+                    let statusColor = '#e2e8f0';
+                    let statusLabel = 'No Iniciado';
+
+                    if (oa.estado === 'en_progreso' || oa.estado === 'debil') {
+                        statusEmoji = '🔄';
+                        statusColor = '#fef08a';
+                        statusLabel = oa.estado === 'debil' ? 'Requiere Apoyo' : 'En Progreso';
+                    } else if (oa.estado === 'consolidado') {
+                        statusEmoji = '✅';
+                        statusColor = '#bbf7d0';
+                        statusLabel = 'Consolidado';
+                    }
+
+                    html += `
+                        <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                                <div style="font-weight: 700; font-size: 14px; color: var(--text-main); flex: 1;">
+                                    <span style="background: ${matColor}; color: white; padding: 3px 6px; border-radius: 4px; font-size: 12px; margin-right: 8px; display: inline-block;">${oa.oa_codigo}</span>
+                                    <span style="display: inline-block;">${oa.descripcion || 'Sin descripción'}</span>
+                                </div>
+                                <div style="background: ${statusColor}; color: #1f2937; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; display: flex; align-items: center; gap: 6px; margin-left: 12px;">
+                                    <span>${statusEmoji}</span> ${statusLabel}
+                                </div>
+                            </div>
+                            <div style="font-size: 13px; color: var(--text-muted); display: flex; gap: 16px;">
+                                <span>🎯 <b>Practicado:</b> ${oa.veces_practicado || 0} veces</span>
+                            </div>
+                            ${oa.recomendacion_ia ? `<div style="margin-top: 10px; font-size: 13px; background: #eff6ff; color: #1e40af; padding: 10px; border-radius: 6px; border-left: 4px solid #3b82f6;">🤖 <b>IA:</b> ${oa.recomendacion_ia}</div>` : ''}
+                        </div>
+                    `;
+                });
+            });
+
+            container.innerHTML = html;
+        } catch (error) {
+            console.error("Error cargando vista_panel_padres:", error);
+            container.innerHTML = '<div style="color:var(--roblox-red); padding: 20px;">Ocurrió un error al cargar el avance del temario desde el servidor.</div>';
         }
     },
 

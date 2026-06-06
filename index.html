@@ -488,6 +488,9 @@
                     <button class="btn-parent-tab active" data-tab="tab-resumen">
                         <span>📊</span> Resumen Curricular
                     </button>
+                    <button class="btn-parent-tab" data-tab="tab-avance-temario">
+                        <span>📈</span> Avance Temario
+                    </button>
                     <button class="btn-parent-tab" data-tab="tab-habitos">
                         <span>🦷</span> Registro de Hábitos
                     </button>
@@ -609,6 +612,22 @@
                             </div>
                         </div>
 
+                    </div>
+
+                    <!-- TAB 1.5: AVANCE TEMARIO (FASE 3) -->
+                    <div class="parent-tab-section" id="tab-avance-temario" style="display: none;">
+                        <div class="card">
+                            <h3 style="font-size: 18px; font-weight: 700; color: #2d3748; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                                <span>📈</span> Avance Temario MINEDUC
+                            </h3>
+                            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                                Seguimiento detallado por Objetivo de Aprendizaje (27 OAs).
+                            </p>
+                            <div id="parent-avance-temario-container" style="display: flex; flex-direction: column; gap: 20px;">
+                                <!-- Inyectado dinámicamente desde vista_panel_padres -->
+                                <div style="text-align: center; color: var(--text-muted); padding: 20px;">Cargando OAs desde Supabase...</div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- TAB 2: REGISTRO DE HÁBITOS -->

@@ -223,6 +223,14 @@
                     </button>
                 </div>
 
+                <!-- Contenedor para "LO QUE TIENES QUE HACER" (Fase 1) -->
+                <div id="misiones-container" style="margin-bottom: 24px; width: 100%;">
+                    <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 16px;">📚 LO QUE TIENES QUE HACER</h2>
+                    <div id="misiones-lista" style="display: flex; flex-direction: column; gap: 16px;">
+                        <!-- Inyectado por JS -->
+                    </div>
+                </div>
+
                 <!-- Las 4 Islas Curriculares Flotantes -->
                 <div class="islands-grid">
                     <!-- Isla Letras -->
@@ -282,6 +290,26 @@
                         <div class="island-info">
                             <h3>Taller de Lectura</h3>
                             <p>Lee cuentos en voz alta con Eliubot y tu micrófono</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenedor para métricas debajo de las islas (Fase 1) -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 24px; width: 100%;" id="dashboard-stats-container">
+                    <!-- Avance Temario MINEDUC -->
+                    <div class="card" style="border-left: 6px solid var(--color-matematica);">
+                        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">📈 Avance Temario MINEDUC</h3>
+                        <div id="stats-avance-container" style="display: flex; flex-direction: column; gap: 8px;">
+                            <!-- Inyectado por JS -->
+                        </div>
+                    </div>
+                    <!-- Cronómetro Examen -->
+                    <div class="card" style="border-left: 6px solid var(--roblox-red); display: flex; flex-direction: column; justify-content: center;">
+                        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <span>⏳</span> Cronómetro Examen
+                        </h3>
+                        <div id="stats-cronometro-container">
+                            <!-- Inyectado por JS -->
                         </div>
                     </div>
                 </div>
@@ -1119,6 +1147,8 @@
     <!-- ==========================================================================
          CARGA DE SCRIPTS JS (ORDEN CRÍTICO DE DEPENDENCIAS)
          ========================================================================== -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-client.js"></script>
     <script src="js/curriculum.js"></script>
     <script src="js/diary.js"></script>
     <script src="js/parent.js?v=2"></script>

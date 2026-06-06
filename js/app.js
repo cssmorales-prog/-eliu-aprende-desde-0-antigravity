@@ -4,6 +4,172 @@
    Manejo de sonido sintético, voz interactiva y simulación de videollamada.
    ========================================================================== */
 
+const Fase1API = {
+    async init() {
+        if (typeof supabaseClient === 'undefined') return;
+        await this.renderMisiones();
+        await this.renderStats();
+    },
+
+    async renderMisiones() {
+        const { data: cola, error } = await supabaseClient
+            .from('cola_hoy')
+            .select('*')
+            .eq('user_id', USER_ID);
+            
+        if (error || !cola) return;
+        
+        const container = document.getElementById('misiones-lista');
+        if (!container) return;
+        
+        let html = '';
+        let currentAtrasadoGroup = null;
+        let currentHoyGroup = null;
+        
+        const hoyStr = new Date().toISOString().split('T')[0];
+        
+        cola.forEach(item => {
+            const isAtrasado = item.fecha_programada < hoyStr;
+            const diffTime = Math.abs(new Date(hoyStr) - new Date(item.fecha_programada));
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (isAtrasado && currentAtrasadoGroup !== item.fecha_programada) {
+                html += `<h3 style="color: #d90429; font-size: 16px; margin-top: 8px;">🟥 ATRASADO desde ${item.fecha_programada} (${diffDays} días atrás)</h3>`;
+                currentAtrasadoGroup = item.fecha_programada;
+            } else if (!isAtrasado && currentHoyGroup !== item.fecha_programada) {
+                html += `<h3 style="color: #0077b6; font-size: 16px; margin-top: 8px;">🟦 HOY ${item.fecha_programada}</h3>`;
+                currentHoyGroup = item.fecha_programada;
+            }
+            
+            html += `
+                <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="font-weight: 700; font-size: 18px;">📘 ${item.asignatura} - ${item.oa_codigo}</div>
+                    <div style="font-size: 14px; color: var(--text-muted);">Páginas ${item.paginas_libro || 'N/A'} · ${item.duracion_estimada || 20} min</div>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button class="btn-activity-submit" onclick="Fase1API.empezarMision('${item.id}', '${item.oa_codigo}')" style="flex: 1; padding: 10px; font-size: 14px; border: none; border-radius: 8px; background: #2ecc71; color: white; font-weight: bold; cursor: pointer;">▶ Empezar misión</button>
+                        <button class="btn-canvas" onclick="Fase1API.verMaterial('${item.oa_codigo}')" style="flex: 1; padding: 10px; font-size: 14px; border: none; border-radius: 8px; background: #3498db; color: white; font-weight: bold; cursor: pointer;">📺 Material de apoyo</button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    },
+    
+    async renderStats() {
+        const { data: resumen, error: e1 } = await supabaseClient
+            .from('vista_panel_padres')
+            .select('*')
+            .eq('user_id', USER_ID);
+            
+        const containerAvance = document.getElementById('stats-avance-container');
+        if (containerAvance && resumen) {
+            let html = '';
+            let totalConsolidados = 0;
+            const asignaturas = {};
+            
+            resumen.forEach(row => {
+                if (!asignaturas[row.asignatura]) asignaturas[row.asignatura] = { total: 0, consolidados: 0 };
+                asignaturas[row.asignatura].total++;
+                if (row.estado === 'consolidado') {
+                    asignaturas[row.asignatura].consolidados++;
+                    totalConsolidados++;
+                }
+            });
+            
+            for (let asig in asignaturas) {
+                const asigData = asignaturas[asig];
+                const pct = asigData.total > 0 ? Math.round((asigData.consolidados / asigData.total) * 100) : 0;
+                let bars = '';
+                for(let i=0; i<5; i++) {
+                    bars += i < Math.round(pct/20) ? '▓' : '░';
+                }
+                html += `
+                    <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                        <span>${asig}</span>
+                        <span style="font-family: monospace;">${asigData.consolidados}/${asigData.total} OAs ${bars}</span>
+                    </div>
+                `;
+            }
+            
+            html += `<hr style="margin: 8px 0; border: 0; border-top: 1px solid var(--border-color);"><div style="font-weight: 700;">TOTAL: ${totalConsolidados}/27 consolidados</div>`;
+            containerAvance.innerHTML = html;
+        }
+        
+        const { data: examen, error: e2 } = await supabaseClient
+            .from('vista_resumen_examen')
+            .select('*')
+            .limit(1)
+            .single();
+            
+        const containerCrono = document.getElementById('stats-cronometro-container');
+        if (containerCrono && examen) {
+            containerCrono.innerHTML = `
+                <div style="font-size: 14px; font-weight: 600;">Faltan ${examen.semanas} sem y ${examen.dias_extra} días</div>
+                <div style="font-size: 14px; color: var(--text-muted); margin-top: 4px;">📅 ${examen.fecha_examen}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Validación MINEDUC</div>
+            `;
+        }
+    },
+    
+    async empezarMision(planId, oaCodigo) {
+        const { data, error } = await supabaseClient
+            .from('sesiones')
+            .insert({ user_id: USER_ID, oa_codigo: oaCodigo, plan_id: planId })
+            .select()
+            .single();
+            
+        if (error || !data) {
+            console.error(error);
+            return;
+        }
+        
+        App.currentSesionId = data.id;
+        App.currentPlanId = planId;
+        
+        let subject = 'lenguaje';
+        if (oaCodigo.startsWith('M')) subject = 'matematica';
+        else if (oaCodigo.startsWith('C')) subject = 'ciencias';
+        else if (oaCodigo.startsWith('H')) subject = 'historia';
+        
+        App.startSubjectLessons(subject);
+    },
+    
+    async verMaterial(oaCodigo) {
+        const { data, error } = await supabaseClient
+            .from('recursos_complementarios')
+            .select('*')
+            .eq('oa_codigo', oaCodigo)
+            .eq('activo', true)
+            .order('prioridad', { ascending: false });
+            
+        if (error || !data || data.length === 0) {
+            alert('No hay material de apoyo para este OA.');
+            return;
+        }
+        
+        let html = '<div style="padding: 20px; text-align: left;"><h2 style="margin-bottom: 16px;">Material de Apoyo</h2>';
+        data.forEach(rec => {
+            html += `<a href="${rec.url}" target="_blank" style="display: block; margin-bottom: 8px; color: var(--color-matematica); font-weight: 600;">${rec.tipo === 'video' ? '📺' : '🎮'} ${rec.titulo}</a>`;
+        });
+        html += '<button class="btn-canvas" onclick="document.getElementById(\\'material-popup\\').remove()" style="margin-top: 16px;">Cerrar</button></div>';
+        
+        const popup = document.createElement('div');
+        popup.id = 'material-popup';
+        popup.style.position = 'fixed';
+        popup.style.top = '50%';
+        popup.style.left = '50%';
+        popup.style.transform = 'translate(-50%, -50%)';
+        popup.style.background = 'white';
+        popup.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+        popup.style.zIndex = '9999';
+        popup.style.borderRadius = '16px';
+        popup.style.minWidth = '300px';
+        popup.innerHTML = html;
+        document.body.appendChild(popup);
+    }
+};
+
 // 🎵 GESTOR DE EFECTOS DE SONIDO SINTÉTICOS (NATIVO - WEB AUDIO API)
 const SoundManager = {
     audioCtx: null,
@@ -1265,6 +1431,9 @@ const App = {
     selectedOptionElement: null,
 
     init() {
+        // Cargar Fase 1
+        Fase1API.init();
+
         // Cargar e iniciar componentes
         Gamification.init();
         DiaryManager.init();
@@ -1587,6 +1756,21 @@ const App = {
     // 3. Finalizar lección con éxito y disparar videollamada metacognitiva
     completeLessonSuccess() {
         const lesson = this.currentLesson;
+        
+        // Fase 1: Marcar en base de datos de Supabase si aplica
+        if (typeof supabaseClient !== 'undefined' && App.currentPlanId) {
+            supabaseClient
+                .from('plan_estudio')
+                .update({ estado: 'completado', fecha_completada: new Date().toISOString() })
+                .eq('id', App.currentPlanId)
+                .then(({error}) => {
+                    if (error) console.error("Error actualizando plan:", error);
+                    else {
+                        Fase1API.renderMisiones(); // Refrescar lista de misiones
+                        Fase1API.renderStats(); // Refrescar stats
+                    }
+                });
+        }
         
         // Guardar lección como completada
         const completed = ParentDashboard.getCompletedLessons();

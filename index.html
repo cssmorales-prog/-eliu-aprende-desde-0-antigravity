@@ -491,6 +491,12 @@
                     <button class="btn-parent-tab" data-tab="tab-avance-temario">
                         <span>📈</span> Avance Temario
                     </button>
+                    <button class="btn-parent-tab" data-tab="tab-historial-sesiones">
+                        <span>📋</span> Historial de Sesiones
+                    </button>
+                    <button class="btn-parent-tab" data-tab="tab-areas-debiles">
+                        <span>🚨</span> Áreas a Reforzar
+                    </button>
                     <button class="btn-parent-tab" data-tab="tab-habitos">
                         <span>🦷</span> Registro de Hábitos
                     </button>
@@ -626,6 +632,36 @@
                             <div id="parent-avance-temario-container" style="display: flex; flex-direction: column; gap: 20px;">
                                 <!-- Inyectado dinámicamente desde vista_panel_padres -->
                                 <div style="text-align: center; color: var(--text-muted); padding: 20px;">Cargando OAs desde Supabase...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: HISTORIAL DE SESIONES -->
+                    <div class="parent-tab-section" id="tab-historial-sesiones" style="display: none;">
+                        <div class="card">
+                            <h3 style="font-size: 18px; font-weight: 700; color: #2d3748; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                                <span>📋</span> Historial de Sesiones
+                            </h3>
+                            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                                Registro detallado de todas las misiones completadas.
+                            </p>
+                            <div id="parent-historial-container">
+                                <div style="text-align: center; color: var(--text-muted); padding: 20px;">Cargando historial...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: ÁREAS A REFORZAR -->
+                    <div class="parent-tab-section" id="tab-areas-debiles" style="display: none;">
+                        <div class="card" style="border-left: 6px solid #ef4444;">
+                            <h3 style="font-size: 18px; font-weight: 700; color: #2d3748; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                                <span>🚨</span> Áreas a Reforzar
+                            </h3>
+                            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                                OAs donde el porcentaje de aciertos fue bajo y requieren tu atención.
+                            </p>
+                            <div id="parent-areas-debiles-container">
+                                <div style="text-align: center; color: var(--text-muted); padding: 20px;">Cargando áreas a reforzar...</div>
                             </div>
                         </div>
                     </div>

@@ -691,6 +691,10 @@ const ParentDashboard = {
             this.renderWeeklyPlanner();
         } else if (tabId === 'tab-avance-temario') {
             this.renderAvanceTemario();
+        } else if (tabId === 'tab-historial-sesiones') {
+            this.renderHistorialSesiones();
+        } else if (tabId === 'tab-areas-debiles') {
+            this.renderAreasDebiles();
         } else if (tabId === 'tab-habitos') {
             this.renderHabitsCalendar();
         } else if (tabId === 'tab-chats') {
@@ -794,6 +798,77 @@ const ParentDashboard = {
             console.error("Error cargando vista_panel_padres:", error);
             container.innerHTML = '<div style="color:var(--roblox-red); padding: 20px;">Ocurrió un error al cargar el avance del temario desde el servidor.</div>';
         }
+    },
+
+    // 📋 RENDERIZAR TAB HISTORIAL DE SESIONES
+    async renderHistorialSesiones() {
+        const container = document.getElementById('parent-historial-container');
+        if (!container || typeof supabaseClient === 'undefined') return;
+        
+        const { data, error } = await supabaseClient
+            .from('sesiones')
+            .select(`
+            id, fecha, hora_inicio, hora_fin, oa_codigo, duracion_minutos,
+            evaluaciones (porcentaje, correctas, total)
+            `)
+            .eq('user_id', USER_ID)
+            .order('hora_inicio', { ascending: false })
+            .limit(50);
+        
+        if (error || !data) { container.innerHTML = '<p>Error al cargar historial</p>'; return; }
+        
+        let html = '<table style="width:100%; font-size:13px; text-align: left; border-collapse: collapse;"><thead><tr style="border-bottom: 2px solid #e2e8f0;">' +
+            '<th style="padding: 8px;">Fecha</th><th style="padding: 8px;">Hora</th><th style="padding: 8px;">OA</th><th style="padding: 8px;">Duración</th><th style="padding: 8px;">% Score</th>' +
+            '</tr></thead><tbody>';
+        data.forEach(s => {
+            const eval = s.evaluaciones?.[0];
+            const pct = eval ? `${eval.correctas}/${eval.total} (${eval.porcentaje}%)` : '—';
+            const hora = s.hora_inicio ? new Date(s.hora_inicio).toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit'}) : '—';
+            html += `<tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 8px;">${s.fecha}</td><td style="padding: 8px;">${hora}</td><td style="padding: 8px; font-weight: bold;">${s.oa_codigo || '—'}</td><td style="padding: 8px;">${s.duracion_minutos || '—'} min</td><td style="padding: 8px;">${pct}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    },
+
+    // 🚨 RENDERIZAR TAB ÁREAS A REFORZAR
+    async renderAreasDebiles() {
+        const container = document.getElementById('parent-areas-debiles-container');
+        if (!container || typeof supabaseClient === 'undefined') return;
+        
+        const { data, error } = await supabaseClient
+            .from('areas_debiles')
+            .select('*')
+            .eq('user_id', USER_ID)
+            .eq('resuelto', false)
+            .order('fecha_detectado', { ascending: false });
+        
+        if (error) { container.innerHTML = '<p>Error</p>'; return; }
+        
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div style="padding:20px; color:#16a34a; font-weight: bold; text-align: center;">🎉 ¡No hay áreas débiles por ahora!</div>';
+            return;
+        }
+        
+        let html = '';
+        data.forEach(a => {
+            html += `
+            <div style="background:#fef2f2; border-left:4px solid #ef4444; padding:12px; margin-bottom:10px; border-radius:6px;">
+                <strong>${a.oa_codigo}</strong> — ${a.porcentaje}% el ${new Date(a.fecha_detectado).toLocaleDateString('es-CL')}
+                <button onclick="ParentDashboard.marcarResuelto('${a.id}')" 
+                        style="float:right; background:#16a34a; color:white; border:0; padding:6px 12px; border-radius:6px; cursor:pointer;">
+                ✓ Resuelto
+                </button>
+            </div>`;
+        });
+        container.innerHTML = html;
+    },
+
+    async marcarResuelto(id) {
+        if (typeof supabaseClient === 'undefined') return;
+        await supabaseClient.from('areas_debiles')
+            .update({ resuelto: true, resuelto_fecha: new Date().toISOString() })
+            .eq('id', id);
+        this.renderAreasDebiles();  // refrescar
     },
 
     // 🦷🚿 RENDERIZAR REGISTRO DE HÁBITOS COMPLETO

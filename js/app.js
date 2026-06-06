@@ -1579,7 +1579,7 @@ const App = {
     },
 
     // 🚀 LÓGICA DE INICIO DE MATERIA Y LECCIONES
-    startSubjectLessons(subjectKey) {
+    async startSubjectLessons(subjectKey) {
         const subject = curriculumData[subjectKey];
         if (!subject) return;
 
@@ -1589,6 +1589,59 @@ const App = {
         
         if (subject.lessons.length > 1 && completed.includes(subject.lessons[0].id)) {
             lesson = subject.lessons[1];
+        }
+
+        // Fase 2: Evaluación Dinámica desde Supabase
+        if (typeof supabaseClient !== 'undefined' && App.currentOACodigo) {
+            try {
+                const { data, error } = await supabaseClient.rpc('preguntas_para_oa', {
+                    p_oa: App.currentOACodigo,
+                    p_user: USER_ID,
+                    p_limit: 5
+                });
+
+                if (error) throw error;
+
+                if (data) {
+                    let dynamicNarrative = "¡Hola Eliu! ¡Es hora de un nuevo desafío! ¡Responde con mucha atención para ganar estrellas! ⭐";
+                    let dynamicQuestions = [];
+                    
+                    if (data.narrativa && Array.isArray(data.preguntas)) {
+                        dynamicNarrative = data.narrativa;
+                        dynamicQuestions = data.preguntas;
+                    } else if (Array.isArray(data)) {
+                        dynamicQuestions = data;
+                    }
+
+                    if (dynamicQuestions.length < 5) {
+                        console.warn(`[Fase 2] Banco de preguntas insuficiente para OA ${App.currentOACodigo}. Solo se encontraron ${dynamicQuestions.length} preguntas.`);
+                    }
+
+                    if (dynamicQuestions.length > 0) {
+                        lesson = {
+                            id: `dinamica_${App.currentOACodigo}`,
+                            title: `Misión ${App.currentOACodigo}`,
+                            description: "Evaluación Dinámica",
+                            narrative: dynamicNarrative,
+                            questions: dynamicQuestions.map(q => ({
+                                type: "multiple",
+                                prompt: q.prompt || q.pregunta || "¿Pregunta?",
+                                options: q.options || q.opciones || [
+                                    { text: "Opción A", correct: true },
+                                    { text: "Opción B", correct: false }
+                                ],
+                                synonymsExplain: q.synonymsExplain || q.explicacion || "¡Excelente trabajo!"
+                            }))
+                        };
+                    }
+                }
+            } catch (e) {
+                console.error("Fase 2 Error cargando preguntas dinámicas:", e);
+                // Si falla, usa lección estática
+            }
+            
+            // Limpiar el OA actual
+            App.currentOACodigo = null;
         }
 
         this.currentLesson = lesson;

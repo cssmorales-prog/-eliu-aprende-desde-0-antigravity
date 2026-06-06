@@ -1620,12 +1620,15 @@ const App = {
                     if (dynamicQuestions.length > 0) {
                         lesson = {
                             id: `dinamica_${App.currentOACodigo}`,
+                            oa_codigo: App.currentOACodigo,
                             title: `Misión ${App.currentOACodigo}`,
                             description: "Evaluación Dinámica",
                             narrative: dynamicNarrative,
                             questions: dynamicQuestions.map(q => ({
+                                id: q.id,
                                 type: "multiple",
                                 prompt: q.prompt || q.pregunta || "¿Pregunta?",
+                                contexto: q.contexto_narrativo,
                                 options: q.options || q.opciones || [
                                     { text: "Opción A", correct: true },
                                     { text: "Opción B", correct: false }
@@ -1646,6 +1649,8 @@ const App = {
 
         this.currentLesson = lesson;
         this.currentQuestionIndex = 0;
+        App.correctAnswersCount = 0;
+        App.responsesHistory = [];
         this.showView('activity-view');
 
         // Configurar cabecera de actividad
@@ -1724,6 +1729,7 @@ const App = {
         document.getElementById('activity-progress-label').innerText = `Desafío ${this.currentQuestionIndex + 1} de ${lesson.questions.length}`;
 
         container.innerHTML = `
+            ${question.contexto ? `<div style="font-size: 16px; color: var(--text-muted); margin-bottom: 8px;"><em>${question.contexto}</em></div>` : ''}
             <div style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
                 <button class="btn-lesson-speech" style="width: 36px; height: 36px; font-size: 14px;" id="btn-play-question-speech">🔊</button>
                 <span>${question.prompt}</span>
@@ -1745,12 +1751,30 @@ const App = {
         });
 
         const submitBtn = document.getElementById('btn-submit-answer');
-        submitBtn.addEventListener('click', () => {
+        submitBtn.addEventListener('click', async () => {
             const isCorrect = submitBtn.getAttribute('data-correct') === 'true';
             const optIdx = parseInt(submitBtn.getAttribute('data-selected-idx'));
             const optionBtn = document.querySelector(`.btn-quiz-option[data-idx="${optIdx}"]`);
 
+            // HOOK 1: Al responder CADA pregunta (anti-repeat)
+            if (typeof supabaseClient !== 'undefined' && question.id) {
+                try {
+                    await supabaseClient.rpc('marcar_pregunta_vista', {
+                        p_user: USER_ID,
+                        p_pregunta: question.id,
+                        p_correcta: isCorrect
+                    });
+                } catch (e) {
+                    console.error("Error marcar_pregunta_vista:", e);
+                }
+            }
+
+            if (App.responsesHistory) {
+                App.responsesHistory.push({ id: question.id, correct: isCorrect });
+            }
+
             if (isCorrect) {
+                if (typeof App.correctAnswersCount === 'number') App.correctAnswersCount++;
                 // Sonido de deleite robótico y agrado
                 SoundManager.play('delight');
                 optionBtn.classList.add('correct');
@@ -1807,8 +1831,24 @@ const App = {
     },
 
     // 3. Finalizar lección con éxito y disparar videollamada metacognitiva
-    completeLessonSuccess() {
+    async completeLessonSuccess() {
         const lesson = this.currentLesson;
+        
+        // HOOK 2: Al TERMINAR la sesión (registrar evaluación)
+        if (typeof supabaseClient !== 'undefined' && App.currentSesionId && lesson.oa_codigo) {
+            try {
+                await supabaseClient.rpc('registrar_evaluacion', {
+                    p_sesion: App.currentSesionId,
+                    p_oa: lesson.oa_codigo,
+                    p_correctas: App.correctAnswersCount || 0,
+                    p_total: lesson.questions ? lesson.questions.length : 0,
+                    p_detalle: { respuestas: App.responsesHistory || [] }
+                });
+            } catch (e) {
+                console.error("Error al registrar evaluacion:", e);
+            }
+        }
+
         
         // Fase 1: Marcar en base de datos de Supabase si aplica
         if (typeof supabaseClient !== 'undefined' && App.currentPlanId) {

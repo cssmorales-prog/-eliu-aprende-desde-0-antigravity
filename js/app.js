@@ -1341,27 +1341,43 @@ IMPORTANTE:
         // Procesar y parsear respuesta
         const { childTranscript, botResponse } = parseGeminiAudioResponse(answerText);
 
-        if (bubble) {
-            bubble.innerText = botResponse;
-            bubble.style.display = 'block';
+        try {
+            const { data, error } = await supabaseClient.functions.invoke(
+                'chat-eliubot', 
+                {
+                    body: {
+                        mensaje: childTranscript,
+                        historial: this.chatHistory ? this.chatHistory.slice(-6) : [],
+                        contexto_oa: App.currentLesson?.oa_codigo || null
+                    }
+                }
+            );
+            
+            if (error) throw error;
+            
+            if (data?.text) {
+                if (bubble) {
+                    bubble.innerText = data.text;
+                    bubble.style.display = 'block';
+                }
+                if (mascot) mascot.classList.add('talking');
+                VoiceEngine.speak(data.text, () => {
+                    if (mascot) mascot.classList.remove('talking');
+                });
+                
+                this.chatHistory = this.chatHistory || [];
+                this.chatHistory.push({ role: "user", parts: [{ text: childTranscript }] });
+                this.chatHistory.push({ role: "model", parts: [{ text: data.text }] });
+                
+                // Guardar log en el historial de los padres
+                ConversationsLogger.log("Conversación AI", childTranscript, data.text);
+            } else {
+                VoiceEngine.speak("Eliubot está pensando, intenta otra vez en un momento.");
+            }
+        } catch (e) {
+            console.error("Error llamando a Eliubot:", e);
+            VoiceEngine.speak("No pude conectarme. Revisa el wifi.");
         }
-
-        // Guardar en el historial textual (peso pluma, sin audios binarios)
-        this.chatHistory.push({ role: "user", parts: [{ text: childTranscript }] });
-        this.chatHistory.push({ role: "model", parts: [{ text: botResponse }] });
-
-        if (this.chatHistory.length > 8) {
-            this.chatHistory = this.chatHistory.slice(this.chatHistory.length - 8);
-        }
-
-        // Guardar log en el historial de los padres
-        ConversationsLogger.log("Conversación AI", childTranscript, botResponse);
-
-        // Hablar
-        if (mascot) mascot.classList.add('talking');
-        VoiceEngine.speak(botResponse, () => {
-            if (mascot) mascot.classList.remove('talking');
-        });
     }
 };
 

@@ -1224,16 +1224,17 @@ const DashboardMicSystem = {
             bubble.style.display = 'block';
         }
 
-        AudioRecordingEngine.start(
-            () => {
-                this.isRecording = true;
+        this.isRecording = true;
+        this.currentTranscript = "";
+
+        SpeechRecognitionEngine.listen(
+            (text) => {
+                this.currentTranscript = text;
             },
-            (err) => {
-                console.error(err);
-                if (dbMic) dbMic.classList.remove('recording');
-                if (glow) glow.classList.remove('listening');
-                if (mascot) mascot.classList.remove('talking');
-                alert("No pudimos abrir tu micrófono. Asegúrate de otorgar los permisos correspondientes.");
+            () => {
+                if (this.isRecording) {
+                    this.stopRecording();
+                }
             }
         );
     },
@@ -1246,100 +1247,19 @@ const DashboardMicSystem = {
 
         if (dbMic) dbMic.classList.remove('recording');
         if (glow) glow.classList.remove('listening');
+        if (mascot) mascot.classList.remove('talking');
 
         if (bubble) bubble.innerText = "Pensando... 🤖";
 
-        AudioRecordingEngine.stop((base64Audio, mimeType) => {
-            this.isRecording = false;
-            this.processAudio(base64Audio, mimeType);
-        });
+        SpeechRecognitionEngine.stop();
+        this.isRecording = false;
+
+        this.processAudio(this.currentTranscript || "Pregunta de voz");
     },
 
-    async processAudio(base64Audio, mimeType) {
+    async processAudio(childTranscript) {
         const bubble = document.getElementById('tito-speech-bubble');
         const mascot = document.getElementById('kids-mascot-avatar');
-
-        let geminiKey = localStorage.getItem('eliu_aprende_gemini_key');
-        if (!geminiKey) {
-            geminiKey = 'AIzaSyDiztJS8-qRAuDZO2Re83LF63Z5x-aIQTc';
-            localStorage.setItem('eliu_aprende_gemini_key', geminiKey);
-        }
-
-        // Prompt del sistema infundido fuertemente con Valores (Honestidad, verdad, bondad)
-        const systemPrompt = `Eres Eliubot, el robot inteligente y tierno tutor de Eliu, un niño chileno de 6 años que prepara su Examen de 1° Básico en Chile. Estás conversando directamente con él. En este momento estás acompañado de su perrito favorito Marshall de Paw Patrol (quien es bombero y doctor).
-Hablas con un tono extremadamente dulce, tierno, pausado y entusiasta.
-IMPORTANTE:
-1. Responde de forma muy concisa, usando máximo 2 a 3 oraciones cortas y sencillas, para que Eliu (que lee muy lento) pueda entenderte y no se canse.
-2. NUNCA uses asteriscos (*) ni texto en negrita. Usa emojis bonitos como ⭐, 🚒, 🚑, 🧱.
-3. Habla con mucho cariño y anímalo a superarse siempre. Dile que es el mejor de todos y muy inteligente.
-4. Conecta lo que diga con sus misiones, sus juegos favoritos (Roblox, Paw Patrol, bomberos y doctores) y sus materias de estudio (sumas de bloques o sílabas).
-5. ENSEÑANZA DE VALORES Y VIRTUDES (CRÍTICO): Siempre que sea oportuno, o si te habla de sus acciones, infúndele valores hermosos. Enséñale con mucha dulzura a decir siempre la verdad, a ser bondadoso con los demás, a no mentir ni engañar bajo ninguna circunstancia, y a ser una persona buena de corazón, empática y generosa, poniendo ejemplos sencillos con sus personajes favoritos (como Chase siendo honesto y leal en sus rescates, o Marshall ayudando a todos con un corazón bondadoso).
-6. OBLIGATORIO: Transcribe exactamente lo que el niño dice en el audio y ponlo al principio de tu respuesta entre corchetes, por ejemplo: "[Transcripción: hola eliubot]". Luego de cerrar el corchete, escribe la respuesta cariñosa de Eliubot.`;
-
-        // Construir contenido multimodal
-        const userParts = [
-            {
-                inlineData: {
-                    mimeType: mimeType || "audio/webm",
-                    data: base64Audio
-                }
-            },
-            {
-                text: "Escucha este audio del niño Eliu (6 años) y respóndele con cariño y valores como Eliubot."
-            }
-        ];
-
-        // Mapear historial textual de la conversación
-        const contentsPayload = this.chatHistory.map(turn => ({
-            role: turn.role,
-            parts: turn.parts
-        }));
-
-        // Añadir el nuevo turno del usuario con el audio multimodal
-        contentsPayload.push({
-            role: "user",
-            parts: userParts
-        });
-
-        const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
-        let answerText = "";
-
-        for (const model of models) {
-            try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        contents: contentsPayload,
-                        systemInstruction: {
-                            parts: [{ text: systemPrompt }]
-                        },
-                        generationConfig: {
-                            maxOutputTokens: 140,
-                            temperature: 0.7
-                        }
-                    })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    answerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (answerText) break;
-                }
-            } catch (e) {
-                console.error(`Error con el modelo ${model} en Dashboard Mic:`, e);
-            }
-        }
-
-        if (!answerText) {
-            answerText = "[Transcripción: Pregunta de voz] ¡Hola Eliu! Soy Eliubot, tu amigo bombero y doctor. Recuerda ser siempre honesto y decir la verdad, ¡eso te da súper poderes! Cuéntame, ¿qué estás estudiando en tus libros hoy? 🚒🧱";
-        }
-
-        // Procesar y parsear respuesta
-        const { childTranscript, botResponse } = parseGeminiAudioResponse(answerText);
 
         try {
             const { data, error } = await supabaseClient.functions.invoke(

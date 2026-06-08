@@ -1290,7 +1290,9 @@ const DashboardMicSystem = {
                 this.chatHistory.push({ role: "model", parts: [{ text: data.text }] });
                 
                 // Guardar log en el historial de los padres
-                ConversationsLogger.log("Conversación AI", childTranscript, data.text);
+                if (typeof ConversationsLogger !== 'undefined') {
+                    ConversationsLogger.log("Conversación AI", childTranscript, data.text);
+                }
             } else {
                 VoiceEngine.speak("Eliubot está pensando, intenta otra vez en un momento.");
             }

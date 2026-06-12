@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Aventuras de Aprendizaje con Eliú 🤖🎮</title>
     
+    <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+        const errDiv = document.createElement('div');
+        errDiv.style.cssText = 'color:red; font-size:24px; z-index:99999; position:fixed; top:60px; left:10px; background:white; padding:10px; border:2px solid red;';
+        errDiv.innerText = 'JS Error: ' + message + ' at line ' + lineno;
+        document.body.appendChild(errDiv);
+    };
+    </script>
+
     <!-- Enlaces a Hojas de Estilos -->
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/kids-theme.css">
@@ -1203,11 +1212,11 @@
          CARGA DE SCRIPTS JS (ORDEN CRÍTICO DE DEPENDENCIAS)
          ========================================================================== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-client.js"></script>
-    <script src="js/curriculum.js"></script>
-    <script src="js/diary.js"></script>
-    <script src="js/parent.js?v=2"></script>
-    <script src="js/app.js?v=2"></script>
+    <script src="js/supabase-client.js?v=5"></script>
+    <script src="js/curriculum.js?v=5"></script>
+    <script src="js/diary.js?v=5"></script>
+    <script src="js/parent.js?v=5"></script>
+    <script src="js/app.js?v=5"></script>
  
 </body>
 </html>

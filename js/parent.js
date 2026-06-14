@@ -873,19 +873,43 @@ const ParentDashboard = {
         this.renderAreasDebiles();  // refrescar
     },
 
-    // 📈 Gráfico de evolución: % de aciertos a lo largo del tiempo
+    // 📈 Gráfico de evolución: promedio de aciertos agrupado cada 3 días
     async construirGraficoEvolucion() {
         try {
             const { data, error } = await supabaseClient
                 .from('evaluaciones')
                 .select('porcentaje, created_at')
                 .order('created_at', { ascending: true })
-                .limit(30);
-            if (error || !data || data.length < 2) {
-                return '<p style="font-size:13px; color:#94a3b8; margin-bottom:16px;">📈 El gráfico de evolución aparecerá cuando Eliú tenga más evaluaciones registradas.</p>';
+                .limit(300);
+            if (error || !data || data.length < 1) {
+                return '<p style="font-size:13px; color:#94a3b8; margin-bottom:16px;">📈 El gráfico de evolución aparecerá cuando Eliú tenga evaluaciones registradas.</p>';
             }
-            const pts = data.map(d => Number(d.porcentaje) || 0);
-            const W = 320, H = 120, pad = 24;
+            // Agrupar en bloques de 3 días (basado en días desde epoch)
+            const DIAS = 3;
+            const buckets = {};
+            data.forEach(d => {
+                const t = new Date(d.created_at).getTime();
+                const diaEpoch = Math.floor(t / (1000 * 60 * 60 * 24));
+                const bloque = Math.floor(diaEpoch / DIAS);
+                if (!buckets[bloque]) buckets[bloque] = { suma: 0, n: 0, primerDia: diaEpoch };
+                buckets[bloque].suma += Number(d.porcentaje) || 0;
+                buckets[bloque].n++;
+            });
+            const claves = Object.keys(buckets).map(Number).sort((a, b) => a - b);
+            const pts = claves.map(k => Math.round(buckets[k].suma / buckets[k].n));
+            const etiquetas = claves.map(k => {
+                const fecha = new Date(buckets[k].primerDia * 24 * 60 * 60 * 1000);
+                return (fecha.getDate()) + '/' + (fecha.getMonth() + 1);
+            });
+
+            if (pts.length < 2) {
+                return `<div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:16px;">
+                    <strong style="font-size:14px; color:#1e293b;">📈 Evolución (cada 3 días)</strong>
+                    <p style="font-size:13px; color:#64748b; margin-top:8px;">Por ahora hay un solo bloque (promedio ${pts[0]}%). El gráfico de tendencia aparecerá cuando pasen más días con práctica.</p>
+                </div>`;
+            }
+
+            const W = 320, H = 130, pad = 26;
             const stepX = (W - pad * 2) / (pts.length - 1);
             const coords = pts.map((p, i) => {
                 const x = pad + i * stepX;
@@ -893,15 +917,19 @@ const ParentDashboard = {
                 return [x, y];
             });
             const linea = coords.map((c, i) => (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1)).join(' ');
-            const puntos = coords.map(c => `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="3" fill="#3b82f6"/>`).join('');
+            const puntos = coords.map((c, i) =>
+                `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="3.5" fill="#3b82f6"/>` +
+                `<text x="${c[0].toFixed(1)}" y="${(c[1] - 7).toFixed(1)}" font-size="9" fill="#1e293b" text-anchor="middle">${pts[i]}%</text>`
+            ).join('');
+            const ejeX = coords.map((c, i) =>
+                `<text x="${c[0].toFixed(1)}" y="${H - 6}" font-size="8" fill="#94a3b8" text-anchor="middle">${etiquetas[i]}</text>`
+            ).join('');
             const y60 = H - pad - 0.60 * (H - pad * 2);
-            const ultimo = pts[pts.length - 1];
-            const primero = pts[0];
-            const tendencia = ultimo > primero ? '📈 subiendo' : (ultimo < primero ? '📉 bajando' : '➡️ estable');
+            const tendencia = pts[pts.length - 1] > pts[0] ? '📈 subiendo' : (pts[pts.length - 1] < pts[0] ? '📉 bajando' : '➡️ estable');
             return `
                 <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:16px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <strong style="font-size:14px; color:#1e293b;">📈 Evolución (${pts.length} evaluaciones)</strong>
+                        <strong style="font-size:14px; color:#1e293b;">📈 Evolución (promedio cada 3 días)</strong>
                         <span style="font-size:12px; color:#64748b;">${tendencia}</span>
                     </div>
                     <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto;">
@@ -909,8 +937,9 @@ const ParentDashboard = {
                         <text x="${pad}" y="${(y60 - 4).toFixed(1)}" font-size="9" fill="#ef4444">60% (mínimo)</text>
                         <path d="${linea}" fill="none" stroke="#3b82f6" stroke-width="2.5"/>
                         ${puntos}
+                        ${ejeX}
                     </svg>
-                    <div style="font-size:11px; color:#94a3b8; text-align:center;">Cada punto es una evaluación, de la más antigua (izq) a la más nueva (der)</div>
+                    <div style="font-size:11px; color:#94a3b8; text-align:center;">Cada punto es el promedio de un período de 3 días</div>
                 </div>`;
         } catch (e) {
             return '';

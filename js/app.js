@@ -79,38 +79,46 @@ const Fase1API = {
         const container = document.getElementById('misiones-lista');
         if (!container) return;
         
-        let html = '';
-        let currentAtrasadoGroup = null;
-        let currentHoyGroup = null;
-        
         const hoyStr = new Date().toISOString().split('T')[0];
-        
-        cola.forEach(item => {
-            const isAtrasado = item.fecha_programada < hoyStr;
-            const diffTime = Math.abs(new Date(hoyStr) - new Date(item.fecha_programada));
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
-            if (isAtrasado && currentAtrasadoGroup !== item.fecha_programada) {
-                html += `<h3 style="color: #d90429; font-size: 16px; margin-top: 8px;">🟥 ATRASADO desde ${item.fecha_programada} (${diffDays} días atrás)</h3>`;
-                currentAtrasadoGroup = item.fecha_programada;
-            } else if (!isAtrasado && currentHoyGroup !== item.fecha_programada) {
-                html += `<h3 style="color: #0077b6; font-size: 16px; margin-top: 8px;">🟦 HOY ${item.fecha_programada}</h3>`;
-                currentHoyGroup = item.fecha_programada;
-            }
-            
-            html += `
-                <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
-                    <div style="font-weight: 700; font-size: 18px;">📘 ${item.titulo || item.oa_titulo || item.oa_codigo}</div>
-                    <div style="font-size: 12px; color: var(--text-muted);">${item.oa_codigo} · ${item.oa_titulo || ''}</div>
-                    <div style="font-size: 14px; color: var(--text-muted);">Páginas ${item.paginas_libro || 'N/A'} · ${item.duracion_estimada || 20} min</div>
-                    <div style="display: flex; gap: 8px; margin-top: 8px;">
-                        <button class="btn-activity-submit" onclick="Fase1API.empezarMision('${item.id}', '${item.oa_codigo}')" style="flex: 1; padding: 10px; font-size: 14px; border: none; border-radius: 8px; background: #2ecc71; color: white; font-weight: bold; cursor: pointer;">▶ Empezar misión</button>
-                        <button class="btn-canvas" onclick="Fase1API.verMaterial('${item.oa_codigo}')" style="flex: 1; padding: 10px; font-size: 14px; border: none; border-radius: 8px; background: #3498db; color: white; font-weight: bold; cursor: pointer;">📺 Material de apoyo</button>
-                    </div>
+        const MAX_ATRASADOS = 3;   // no abrumar al niño con un muro de pendientes
+
+        const tarjeta = (item) => `
+            <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="font-weight: 700; font-size: 18px;">📘 ${item.titulo || item.oa_titulo || item.oa_codigo}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${item.oa_codigo} · ${item.oa_titulo || ''}</div>
+                <div style="font-size: 14px; color: var(--text-muted);">Páginas ${item.paginas_libro || 'N/A'} · ${item.duracion_estimada || 20} min</div>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <button class="btn-activity-submit" onclick="Fase1API.empezarMision('${item.id}', '${item.oa_codigo}')" style="flex: 1; padding: 10px; font-size: 14px; border: none; border-radius: 8px; background: #2ecc71; color: white; font-weight: bold; cursor: pointer;">▶ Empezar misión</button>
+                    <button class="btn-canvas" onclick="Fase1API.verMaterial('${item.oa_codigo}')" style="flex: 1; padding: 10px; font-size: 14px; border: none; border-radius: 8px; background: #3498db; color: white; font-weight: bold; cursor: pointer;">📺 Material de apoyo</button>
                 </div>
-            `;
-        });
-        
+            </div>`;
+
+        const atrasados = cola.filter(i => i.fecha_programada < hoyStr);
+        const hoyItems = cola.filter(i => i.fecha_programada >= hoyStr);
+
+        let html = '';
+
+        // Lo de HOY primero (lo más importante y motivante)
+        if (hoyItems.length) {
+            html += `<h3 style="color: #0077b6; font-size: 16px; margin-top: 4px;">🟦 PARA HOY</h3>`;
+            hoyItems.forEach(item => { html += tarjeta(item); });
+        }
+
+        // Atrasados: solo los 3 más antiguos (más urgentes), el resto se resume
+        if (atrasados.length) {
+            html += `<h3 style="color: #d90429; font-size: 16px; margin-top: 14px;">📌 Para ponerte al día</h3>`;
+            atrasados.slice(0, MAX_ATRASADOS).forEach(item => { html += tarjeta(item); });
+            const restantes = atrasados.length - Math.min(MAX_ATRASADOS, atrasados.length);
+            if (restantes > 0) {
+                html += `<div style="background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; border-radius:10px; padding:12px; font-size:14px; margin-top:6px;">
+                    Tienes <b>${restantes}</b> actividad(es) más de días pasados. Completa primero estas de arriba y luego seguimos 💪</div>`;
+            }
+        }
+
+        if (!html) {
+            html = `<div style="background:#dcfce7; color:#166534; padding:16px; border-radius:12px; font-size:15px;">🎉 ¡Estás al día! No tienes actividades pendientes hoy.</div>`;
+        }
+
         container.innerHTML = html;
     },
     

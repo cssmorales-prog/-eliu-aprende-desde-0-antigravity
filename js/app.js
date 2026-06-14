@@ -152,7 +152,7 @@ const Fase1API = {
         data.forEach(rec => {
             html += `<a href="${rec.url}" target="_blank" style="display: block; margin-bottom: 8px; color: var(--color-matematica); font-weight: 600;">${rec.tipo === 'video' ? '📺' : '🎮'} ${rec.titulo}</a>`;
         });
-        html += '<button class="btn-canvas" onclick="document.getElementById(\\'material-popup\\').remove()" style="margin-top: 16px;">Cerrar</button></div>';
+        html += '<button class="btn-canvas" onclick="document.getElementById(\'material-popup\').remove()" style="margin-top: 16px;">Cerrar</button></div>';
         
         const popup = document.createElement('div');
         popup.id = 'material-popup';

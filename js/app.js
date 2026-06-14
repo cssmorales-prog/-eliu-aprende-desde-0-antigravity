@@ -43,7 +43,8 @@ const Fase1API = {
             
             html += `
                 <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
-                    <div style="font-weight: 700; font-size: 18px;">📘 ${item.asignatura} - ${item.oa_codigo}</div>
+                    <div style="font-weight: 700; font-size: 18px;">📘 ${item.titulo || item.oa_titulo || item.oa_codigo}</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">${item.oa_codigo} · ${item.oa_titulo || ''}</div>
                     <div style="font-size: 14px; color: var(--text-muted);">Páginas ${item.paginas_libro || 'N/A'} · ${item.duracion_estimada || 20} min</div>
                     <div style="display: flex; gap: 8px; margin-top: 8px;">
                         <button class="btn-activity-submit" onclick="Fase1API.empezarMision('${item.id}', '${item.oa_codigo}')" style="flex: 1; padding: 10px; font-size: 14px; border: none; border-radius: 8px; background: #2ecc71; color: white; font-weight: bold; cursor: pointer;">▶ Empezar misión</button>

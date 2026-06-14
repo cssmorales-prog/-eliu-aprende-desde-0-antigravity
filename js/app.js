@@ -173,6 +173,140 @@ const Fase1API = {
     }
 };
 
+// 📝 SIMULACRO DE EXAMEN MINEDUC (20 preguntas integradas, como la prueba real)
+const SimulacroSystem = {
+    preguntas: [],
+    idx: 0,
+    correctas: 0,
+
+    async iniciar() {
+        if (typeof supabaseClient === 'undefined') {
+            alert('Necesitas conexión para el simulacro.');
+            return;
+        }
+        const { data, error } = await supabaseClient.rpc('generar_simulacro', { p_limit: 20 });
+        if (error || !data || data.length === 0) {
+            console.error('Error simulacro:', error);
+            alert('No pude cargar el simulacro. Revisa la conexión.');
+            return;
+        }
+        this.preguntas = data;
+        this.idx = 0;
+        this.correctas = 0;
+        this.render();
+    },
+
+    cerrar() {
+        const ov = document.getElementById('simulacro-overlay');
+        if (ov) ov.remove();
+    },
+
+    render() {
+        this.cerrar();
+        const total = this.preguntas.length;
+        const q = this.preguntas[this.idx];
+        const opciones = Array.isArray(q.opciones) ? q.opciones : (q.options || []);
+
+        let opcionesHtml = '';
+        opciones.forEach((op, i) => {
+            opcionesHtml += `<button class="sim-opt" data-i="${i}" data-correct="${op.correct === true}"
+                style="display:block; width:100%; text-align:left; margin:8px 0; padding:14px; font-size:17px;
+                border:2px solid #cbd5e1; border-radius:12px; background:white; cursor:pointer;">
+                ${op.text}</button>`;
+        });
+
+        const ov = document.createElement('div');
+        ov.id = 'simulacro-overlay';
+        ov.style = 'position:fixed; inset:0; z-index:10000; background:rgba(15,23,42,0.92); display:flex; align-items:center; justify-content:center; padding:16px; overflow-y:auto;';
+        ov.innerHTML = `
+            <div style="background:white; border-radius:18px; max-width:560px; width:100%; padding:22px; box-shadow:0 12px 40px rgba(0,0,0,0.5);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <strong style="color:#3b82f6; font-size:14px;">📝 SIMULACRO MINEDUC</strong>
+                    <span style="font-size:13px; color:#64748b;">Pregunta ${this.idx + 1} de ${total}</span>
+                </div>
+                <div style="height:8px; background:#e2e8f0; border-radius:4px; margin-bottom:16px; overflow:hidden;">
+                    <div style="height:100%; width:${Math.round((this.idx / total) * 100)}%; background:#3b82f6;"></div>
+                </div>
+                <div style="font-size:20px; font-weight:700; color:#1e293b; margin-bottom:16px;">${q.pregunta}</div>
+                <div id="sim-opts">${opcionesHtml}</div>
+                <div id="sim-feedback" style="margin-top:12px; font-size:15px; min-height:24px;"></div>
+                <button id="sim-cancel" style="margin-top:14px; background:none; border:none; color:#94a3b8; font-size:13px; cursor:pointer;">Salir del simulacro</button>
+            </div>`;
+        document.body.appendChild(ov);
+
+        ov.querySelectorAll('.sim-opt').forEach(btn => {
+            btn.onclick = () => this.responder(btn, q);
+        });
+        document.getElementById('sim-cancel').onclick = () => this.cerrar();
+    },
+
+    responder(btn, q) {
+        const esCorrecta = btn.getAttribute('data-correct') === 'true';
+        const fb = document.getElementById('sim-feedback');
+        // Bloquear todos los botones
+        document.querySelectorAll('.sim-opt').forEach(b => {
+            b.onclick = null;
+            const correcta = b.getAttribute('data-correct') === 'true';
+            if (correcta) b.style.borderColor = '#16a34a', b.style.background = '#dcfce7';
+        });
+        if (esCorrecta) {
+            this.correctas++;
+            if (typeof SoundManager !== 'undefined') SoundManager.play('success');
+            fb.innerHTML = '<span style="color:#16a34a; font-weight:700;">✅ ¡Correcto!</span> ' + (q.explicacion || '');
+        } else {
+            btn.style.borderColor = '#ef4444';
+            btn.style.background = '#fee2e2';
+            if (typeof SoundManager !== 'undefined') SoundManager.play('wrong');
+            fb.innerHTML = '<span style="color:#ef4444; font-weight:700;">❌ Casi.</span> ' + (q.explicacion || '');
+        }
+        // Botón siguiente
+        const next = document.createElement('button');
+        next.innerText = (this.idx + 1 < this.preguntas.length) ? 'Siguiente ▶' : 'Ver resultado 🏁';
+        next.style = 'margin-top:14px; width:100%; padding:14px; font-size:17px; font-weight:bold; border:none; border-radius:12px; background:#3b82f6; color:white; cursor:pointer;';
+        next.onclick = () => {
+            this.idx++;
+            if (this.idx < this.preguntas.length) this.render();
+            else this.resultado();
+        };
+        fb.appendChild(document.createElement('br'));
+        fb.appendChild(next);
+    },
+
+    resultado() {
+        this.cerrar();
+        const total = this.preguntas.length;
+        const pct = Math.round((this.correctas / total) * 100);
+        let msg, color;
+        if (pct >= 80) { msg = '¡Excelente! Está muy preparado para el examen 🌟'; color = '#16a34a'; }
+        else if (pct >= 60) { msg = 'Bien, pero conviene reforzar algunos temas 💪'; color = '#f59e0b'; }
+        else { msg = 'Hay que practicar más antes del examen. ¡Sigan estudiando! 📚'; color = '#ef4444'; }
+
+        const ov = document.createElement('div');
+        ov.id = 'simulacro-overlay';
+        ov.style = 'position:fixed; inset:0; z-index:10000; background:rgba(15,23,42,0.92); display:flex; align-items:center; justify-content:center; padding:16px;';
+        ov.innerHTML = `
+            <div style="background:white; border-radius:18px; max-width:480px; width:100%; padding:28px; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,0.5);">
+                <div style="font-size:54px;">🏁</div>
+                <h2 style="margin:8px 0; color:#1e293b;">Resultado del Simulacro</h2>
+                <div style="font-size:46px; font-weight:800; color:${color};">${this.correctas}/${total}</div>
+                <div style="font-size:22px; color:${color}; margin-bottom:10px;">${pct}%</div>
+                <p style="color:#475569; font-size:16px;">${msg}</p>
+                <button onclick="SimulacroSystem.cerrar()" style="margin-top:14px; padding:12px 28px; font-size:16px; font-weight:bold; border:none; border-radius:12px; background:#3b82f6; color:white; cursor:pointer;">Cerrar</button>
+                <button onclick="SimulacroSystem.iniciar()" style="margin-top:10px; display:block; width:100%; padding:10px; font-size:14px; border:none; border-radius:10px; background:#e2e8f0; color:#334155; cursor:pointer;">🔄 Otro simulacro</button>
+            </div>`;
+        document.body.appendChild(ov);
+
+        // Registrar el simulacro en BD (no bloquea si falla)
+        try {
+            supabaseClient.from('evaluaciones').insert({
+                oa_codigo: null, sesion_id: null,
+                correctas: this.correctas, total: total, porcentaje: pct,
+                detalle: { tipo: 'simulacro_mineduc' }
+            });
+        } catch (e) { console.warn('No se registró el simulacro:', e); }
+    }
+};
+
 // 🎵 GESTOR DE EFECTOS DE SONIDO SINTÉTICOS (NATIVO - WEB AUDIO API)
 const SoundManager = {
     audioCtx: null,

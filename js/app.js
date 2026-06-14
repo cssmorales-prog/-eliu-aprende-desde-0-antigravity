@@ -15,6 +15,57 @@ const Fase1API = {
         } catch (e) { console.warn('No se generaron repasos automáticos:', e); }
         await this.renderMisiones();
         await this.renderStats();
+        await this.renderMiProgreso();
+    },
+
+    // 🌟 Panel motivador para Eliú: cuánto lleva aprendido + gráfico de cómo va
+    async renderMiProgreso() {
+        const cont = document.getElementById('mi-progreso-container');
+        if (!cont || typeof supabaseClient === 'undefined') return;
+        try {
+            const { data, error } = await supabaseClient
+                .from('vista_panel_padres')
+                .select('estado')
+                .eq('user_id', USER_ID);
+            if (error || !data) { cont.innerHTML = ''; return; }
+
+            const total = data.length || 27;
+            const consolidados = data.filter(r => r.estado === 'consolidado').length;
+            const enProgreso = data.filter(r => r.estado === 'en_progreso' || r.estado === 'debil').length;
+            const estrellas = '⭐'.repeat(Math.min(consolidados, 10)) || '☆';
+
+            let animo;
+            if (consolidados === 0 && enProgreso === 0) animo = '¡Empieza tu primera misión y gana tu primera estrella! 🚀';
+            else if (consolidados < 5) animo = '¡Buen comienzo! Cada tema que aprendes te hace más fuerte 💪';
+            else if (consolidados < 14) animo = '¡Vas increíble! Ya dominas varios temas 🌟';
+            else if (consolidados < 27) animo = '¡Eres una súper estrella! Casi todos los temas dominados 🏆';
+            else animo = '¡INCREÍBLE! ¡Dominaste TODOS los temas! 🎉👑';
+
+            // Gráfico de evolución (reutiliza el del panel de padres si está disponible)
+            let grafico = '';
+            if (typeof ParentDashboard !== 'undefined' && ParentDashboard.construirGraficoEvolucion) {
+                try { grafico = await ParentDashboard.construirGraficoEvolucion(); } catch (e) { grafico = ''; }
+            }
+
+            const pct = Math.round((consolidados / total) * 100);
+            cont.innerHTML = `
+                <p style="font-size:14px; color:#475569; margin-bottom:10px;">${animo}</p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+                    <div style="flex:1; min-width:120px; background:#f5f3ff; border-radius:12px; padding:12px; text-align:center;">
+                        <div style="font-size:30px; font-weight:800; color:#7c3aed;">${consolidados}<span style="font-size:16px; color:#a78bfa;">/${total}</span></div>
+                        <div style="font-size:12px; color:#7c3aed;">temas dominados</div>
+                    </div>
+                    <div style="flex:1; min-width:120px; background:#eff6ff; border-radius:12px; padding:12px; text-align:center;">
+                        <div style="font-size:30px; font-weight:800; color:#2563eb;">${pct}%</div>
+                        <div style="font-size:12px; color:#2563eb;">del examen listo</div>
+                    </div>
+                </div>
+                <div style="font-size:24px; text-align:center; margin-bottom:6px; letter-spacing:2px;">${estrellas}</div>
+                ${grafico}`;
+        } catch (e) {
+            console.warn('renderMiProgreso:', e);
+            cont.innerHTML = '';
+        }
     },
 
     async renderMisiones() {

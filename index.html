@@ -506,6 +506,9 @@
                     <button class="btn-parent-tab" data-tab="tab-areas-debiles">
                         <span>ðŸš¨</span> Ãreas a Reforzar
                     </button>
+                    <button class="btn-parent-tab" data-tab="tab-retencion">
+                        <span>🧠</span> Retención
+                    </button>
                     <button class="btn-parent-tab" data-tab="tab-habitos">
                         <span>ðŸ¦·</span> Registro de HÃ¡bitos
                     </button>
@@ -676,6 +679,20 @@
                     </div>
 
                     <!-- TAB 2: REGISTRO DE HÃBITOS -->
+                    <div class="parent-tab-section" id="tab-retencion" style="display: none;">
+                        <div class="card" style="border-left: 6px solid #8b5cf6;">
+                            <h3 style="font-size: 18px; font-weight: 700; color: #2d3748; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                                <span>🧠</span> Retención del aprendizaje
+                            </h3>
+                            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                                ¿Eliú aprendió de verdad o solo lo recordó un rato? Compara sus prácticas a lo largo del tiempo.
+                            </p>
+                            <div id="parent-retencion-container">
+                                <div style="text-align: center; color: var(--text-muted); padding: 20px;">Cargando retención...</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="parent-tab-section" id="tab-habitos">
                         <div class="card">
                             <h3 style="font-size: 18px; font-weight: 700; color: #2d3748; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
@@ -1270,11 +1287,11 @@
          CARGA DE SCRIPTS JS (ORDEN CRÃTICO DE DEPENDENCIAS)
          ========================================================================== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-client.js?v=7"></script>
-    <script src="js/curriculum.js?v=7"></script>
-    <script src="js/diary.js?v=7"></script>
-    <script src="js/parent.js?v=7"></script>
-    <script src="js/app.js?v=7"></script>
+    <script src="js/supabase-client.js?v=8"></script>
+    <script src="js/curriculum.js?v=8"></script>
+    <script src="js/diary.js?v=8"></script>
+    <script src="js/parent.js?v=8"></script>
+    <script src="js/app.js?v=8"></script>
 
 </body>
 </html>

@@ -178,6 +178,8 @@ const SimulacroSystem = {
     preguntas: [],
     idx: 0,
     correctas: 0,
+    tiempoRestante: 0,    // segundos
+    timerId: null,
 
     async iniciar() {
         if (typeof supabaseClient === 'undefined') {
@@ -193,10 +195,39 @@ const SimulacroSystem = {
         this.preguntas = data;
         this.idx = 0;
         this.correctas = 0;
+        this.tiempoRestante = 90 * 60;   // 90 minutos, como el examen real MINEDUC
+        this.iniciarTimer();
         this.render();
     },
 
+    iniciarTimer() {
+        this.detenerTimer();
+        this.timerId = setInterval(() => {
+            this.tiempoRestante--;
+            this.pintarTimer();
+            if (this.tiempoRestante <= 0) {
+                this.detenerTimer();
+                alert('⏰ ¡Se acabó el tiempo! (90 minutos, como en el examen real)');
+                this.resultado();
+            }
+        }, 1000);
+    },
+
+    detenerTimer() {
+        if (this.timerId) { clearInterval(this.timerId); this.timerId = null; }
+    },
+
+    pintarTimer() {
+        const el = document.getElementById('sim-timer');
+        if (!el) return;
+        const m = Math.floor(this.tiempoRestante / 60);
+        const s = this.tiempoRestante % 60;
+        el.innerText = '⏱ ' + m + ':' + (s < 10 ? '0' : '') + s;
+        el.style.color = this.tiempoRestante < 300 ? '#ef4444' : '#64748b'; // rojo en últimos 5 min
+    },
+
     cerrar() {
+        this.detenerTimer();
         const ov = document.getElementById('simulacro-overlay');
         if (ov) ov.remove();
     },
@@ -222,8 +253,9 @@ const SimulacroSystem = {
             <div style="background:white; border-radius:18px; max-width:560px; width:100%; padding:22px; box-shadow:0 12px 40px rgba(0,0,0,0.5);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                     <strong style="color:#3b82f6; font-size:14px;">📝 SIMULACRO MINEDUC</strong>
-                    <span style="font-size:13px; color:#64748b;">Pregunta ${this.idx + 1} de ${total}</span>
+                    <span id="sim-timer" style="font-size:14px; font-weight:700; color:#64748b;">⏱ 90:00</span>
                 </div>
+                <div style="text-align:right; font-size:12px; color:#94a3b8; margin-bottom:4px;">Pregunta ${this.idx + 1} de ${total}</div>
                 <div style="height:8px; background:#e2e8f0; border-radius:4px; margin-bottom:16px; overflow:hidden;">
                     <div style="height:100%; width:${Math.round((this.idx / total) * 100)}%; background:#3b82f6;"></div>
                 </div>

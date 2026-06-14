@@ -695,6 +695,8 @@ const ParentDashboard = {
             this.renderHistorialSesiones();
         } else if (tabId === 'tab-areas-debiles') {
             this.renderAreasDebiles();
+        } else if (tabId === 'tab-retencion') {
+            this.renderRetencion();
         } else if (tabId === 'tab-habitos') {
             this.renderHabitsCalendar();
         } else if (tabId === 'tab-chats') {
@@ -869,6 +871,53 @@ const ParentDashboard = {
             .update({ resuelto: true, resuelto_fecha: new Date().toISOString() })
             .eq('id', id);
         this.renderAreasDebiles();  // refrescar
+    },
+
+    // 🧠 RETENCIÓN: ¿memorizó de verdad o solo de corto plazo?
+    async renderRetencion() {
+        const container = document.getElementById('parent-retencion-container');
+        if (!container || typeof supabaseClient === 'undefined') return;
+        container.innerHTML = '<div style="padding:20px; color:#64748b;">Analizando la retención… ⏳</div>';
+
+        const { data, error } = await supabaseClient
+            .from('vista_retencion')
+            .select('*')
+            .eq('user_id', USER_ID);
+
+        if (error) { container.innerHTML = '<div style="padding:20px; color:#ef4444;">Error al cargar retención.</div>'; return; }
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div style="padding:20px; color:#64748b;">Todavía no hay suficientes prácticas para medir la retención. Cuando Eliú repita un mismo tema varias veces, aquí verás si lo aprendió de verdad o solo lo recordó un rato.</div>';
+            return;
+        }
+
+        const meta = {
+            memorizado:   { e:'🟢', t:'Aprendido de verdad', c:'#16a34a' },
+            mejorando:    { e:'🔵', t:'Mejorando',            c:'#2563eb' },
+            practicando:  { e:'🟡', t:'Practicando',          c:'#ca8a04' },
+            olvidando:    { e:'🟠', t:'Está olvidando',       c:'#ea580c' },
+            riesgo_olvido:{ e:'🔴', t:'Riesgo de olvido',     c:'#dc2626' },
+            recien_visto: { e:'⚪', t:'Recién visto',         c:'#64748b' }
+        };
+        const orden = ['riesgo_olvido','olvidando','practicando','mejorando','recien_visto','memorizado'];
+        data.sort((a,b) => orden.indexOf(a.estado_retencion) - orden.indexOf(b.estado_retencion));
+
+        let html = '<p style="font-size:13px; color:#64748b; margin-bottom:14px;">Esto distingue si Eliú <b>realmente aprendió</b> un tema (lo recuerda después de varios días) o si solo lo tuvo en memoria de corto plazo.</p>';
+        data.forEach(r => {
+            const m = meta[r.estado_retencion] || meta.recien_visto;
+            html += `
+                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(0,0,0,0.1); border-left:4px solid ${m.c}; border-radius:8px; padding:12px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:700; font-size:14px;">${r.oa_codigo} · ${r.titulo}</span>
+                        <span style="background:${m.c}; color:white; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; white-space:nowrap;">${m.e} ${m.t}</span>
+                    </div>
+                    <div style="font-size:12px; color:#64748b; margin-top:6px;">
+                        Practicado ${r.total_evals} ${r.total_evals === 1 ? 'vez' : 'veces'} ·
+                        promedio ${r.promedio_global || 0}% ·
+                        última práctica hace ${r.dias_desde_ultima} ${r.dias_desde_ultima === 1 ? 'día' : 'días'}
+                    </div>
+                </div>`;
+        });
+        container.innerHTML = html;
     },
 
     // 🦷🚿 RENDERIZAR REGISTRO DE HÁBITOS COMPLETO

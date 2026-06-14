@@ -240,6 +240,18 @@
                     </div>
                 </div>
 
+                <!-- TESTS PARA SABER QUÉ REPASAR -->
+                <div style="margin-bottom: 24px; width: 100%;">
+                    <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 6px;">🎯 ¿Qué tengo que repasar?</h2>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Haz un test corto y te diremos qué temas reforzar.</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <button onclick="if(typeof SimulacroSystem!=='undefined')SimulacroSystem.iniciarTest('lenguaje')" style="flex:1; min-width:130px; padding:14px; border:none; border-radius:12px; background:#3b82f6; color:white; font-weight:bold; font-size:15px; cursor:pointer;">📖 Lenguaje</button>
+                        <button onclick="if(typeof SimulacroSystem!=='undefined')SimulacroSystem.iniciarTest('matematica')" style="flex:1; min-width:130px; padding:14px; border:none; border-radius:12px; background:#10b981; color:white; font-weight:bold; font-size:15px; cursor:pointer;">🔢 Matemática</button>
+                        <button onclick="if(typeof SimulacroSystem!=='undefined')SimulacroSystem.iniciarTest('ciencias')" style="flex:1; min-width:130px; padding:14px; border:none; border-radius:12px; background:#22c55e; color:white; font-weight:bold; font-size:15px; cursor:pointer;">🧪 Ciencias</button>
+                        <button onclick="if(typeof SimulacroSystem!=='undefined')SimulacroSystem.iniciarTest('historia')" style="flex:1; min-width:130px; padding:14px; border:none; border-radius:12px; background:#f59e0b; color:white; font-weight:bold; font-size:15px; cursor:pointer;">🗺️ Historia</button>
+                    </div>
+                </div>
+
                 <!-- Las 4 Islas Curriculares Flotantes -->
                 <div class="islands-grid">
                     <!-- Isla Letras -->
@@ -1287,11 +1299,11 @@
          CARGA DE SCRIPTS JS (ORDEN CRÃTICO DE DEPENDENCIAS)
          ========================================================================== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-client.js?v=8"></script>
-    <script src="js/curriculum.js?v=8"></script>
-    <script src="js/diary.js?v=8"></script>
-    <script src="js/parent.js?v=8"></script>
-    <script src="js/app.js?v=8"></script>
+    <script src="js/supabase-client.js?v=9"></script>
+    <script src="js/curriculum.js?v=9"></script>
+    <script src="js/diary.js?v=9"></script>
+    <script src="js/parent.js?v=9"></script>
+    <script src="js/app.js?v=9"></script>
 
 </body>
 </html>

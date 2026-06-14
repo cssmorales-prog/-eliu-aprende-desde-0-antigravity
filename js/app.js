@@ -173,30 +173,44 @@ const Fase1API = {
     }
 };
 
-// 📝 SIMULACRO DE EXAMEN MINEDUC (20 preguntas integradas, como la prueba real)
+// 📝 SISTEMA DE TESTS / SIMULACRO MINEDUC + diagnóstico de qué repasar
 const SimulacroSystem = {
     preguntas: [],
     idx: 0,
     correctas: 0,
     tiempoRestante: 0,    // segundos
     timerId: null,
+    modo: 'simulacro',    // 'simulacro' (20, 90min) o 'test' (por asignatura)
+    resultadosPorOA: {},  // { 'M-OA9': {c:2,t:3}, ... }
+    titulo: 'SIMULACRO MINEDUC',
 
+    // Test de examen completo (20 preguntas, 90 min)
     async iniciar() {
-        if (typeof supabaseClient === 'undefined') {
-            alert('Necesitas conexión para el simulacro.');
-            return;
-        }
-        const { data, error } = await supabaseClient.rpc('generar_simulacro', { p_limit: 20 });
+        await this._cargar('generar_simulacro', { p_limit: 20 }, 'simulacro', 90 * 60, '📝 SIMULACRO MINEDUC');
+    },
+
+    // Test por asignatura (8 preguntas, sin cuenta regresiva) para identificar qué repasar
+    async iniciarTest(asignatura) {
+        const labels = { lenguaje: '📖 Test de Lenguaje', matematica: '🔢 Test de Matemática', ciencias: '🧪 Test de Ciencias', historia: '🗺️ Test de Historia' };
+        await this._cargar('generar_test', { p_asignatura: asignatura, p_limit: 8 }, 'test', 0, labels[asignatura] || '📝 Test');
+    },
+
+    async _cargar(rpc, params, modo, segundos, titulo) {
+        if (typeof supabaseClient === 'undefined') { alert('Necesitas conexión.'); return; }
+        const { data, error } = await supabaseClient.rpc(rpc, params);
         if (error || !data || data.length === 0) {
-            console.error('Error simulacro:', error);
-            alert('No pude cargar el simulacro. Revisa la conexión.');
+            console.error('Error test:', error);
+            alert('No pude cargar el test. Revisa la conexión.');
             return;
         }
         this.preguntas = data;
         this.idx = 0;
         this.correctas = 0;
-        this.tiempoRestante = 90 * 60;   // 90 minutos, como el examen real MINEDUC
-        this.iniciarTimer();
+        this.resultadosPorOA = {};
+        this.modo = modo;
+        this.titulo = titulo;
+        this.tiempoRestante = segundos;
+        if (segundos > 0) this.iniciarTimer();
         this.render();
     },
 
@@ -252,8 +266,8 @@ const SimulacroSystem = {
         ov.innerHTML = `
             <div style="background:white; border-radius:18px; max-width:560px; width:100%; padding:22px; box-shadow:0 12px 40px rgba(0,0,0,0.5);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <strong style="color:#3b82f6; font-size:14px;">📝 SIMULACRO MINEDUC</strong>
-                    <span id="sim-timer" style="font-size:14px; font-weight:700; color:#64748b;">⏱ 90:00</span>
+                    <strong style="color:#3b82f6; font-size:14px;">${this.titulo}</strong>
+                    <span id="sim-timer" style="font-size:14px; font-weight:700; color:#64748b;">${this.modo === 'simulacro' ? '⏱ 90:00' : ''}</span>
                 </div>
                 <div style="text-align:right; font-size:12px; color:#94a3b8; margin-bottom:4px;">Pregunta ${this.idx + 1} de ${total}</div>
                 <div style="height:8px; background:#e2e8f0; border-radius:4px; margin-bottom:16px; overflow:hidden;">
@@ -275,6 +289,11 @@ const SimulacroSystem = {
     responder(btn, q) {
         const esCorrecta = btn.getAttribute('data-correct') === 'true';
         const fb = document.getElementById('sim-feedback');
+        // Registrar resultado por OA (para saber qué repasar)
+        const oa = q.oa_codigo || 'desconocido';
+        if (!this.resultadosPorOA[oa]) this.resultadosPorOA[oa] = { c: 0, t: 0 };
+        this.resultadosPorOA[oa].t++;
+        if (esCorrecta) this.resultadosPorOA[oa].c++;
         // Bloquear todos los botones
         document.querySelectorAll('.sim-opt').forEach(b => {
             b.onclick = null;
@@ -309,33 +328,62 @@ const SimulacroSystem = {
         const total = this.preguntas.length;
         const pct = Math.round((this.correctas / total) * 100);
         let msg, color;
-        if (pct >= 80) { msg = '¡Excelente! Está muy preparado para el examen 🌟'; color = '#16a34a'; }
+        if (pct >= 80) { msg = '¡Excelente! Muy preparado 🌟'; color = '#16a34a'; }
         else if (pct >= 60) { msg = 'Bien, pero conviene reforzar algunos temas 💪'; color = '#f59e0b'; }
-        else { msg = 'Hay que practicar más antes del examen. ¡Sigan estudiando! 📚'; color = '#ef4444'; }
+        else { msg = 'Hay que practicar más. ¡A repasar! 📚'; color = '#ef4444'; }
+
+        // Calcular qué OAs repasar (los que salieron < 60% en este test) y registrar en BD
+        const titulosOA = {};
+        this.preguntas.forEach(q => { if (q.oa_codigo) titulosOA[q.oa_codigo] = q.oa_codigo; });
+        const repasar = [];
+        Object.keys(this.resultadosPorOA).forEach(oa => {
+            const r = this.resultadosPorOA[oa];
+            const poa = Math.round((r.c / r.t) * 100);
+            // Registrar resultado por OA (alimenta áreas débiles y retención)
+            if (oa !== 'desconocido' && typeof USER_ID !== 'undefined') {
+                try {
+                    supabaseClient.rpc('registrar_resultado_oa', {
+                        p_user: USER_ID, p_oa: oa, p_correctas: r.c, p_total: r.t
+                    });
+                } catch (e) { console.warn('No se registró OA', oa, e); }
+            }
+            if (poa < 60) repasar.push({ oa, pct: poa, c: r.c, t: r.t });
+        });
+
+        let repasarHtml = '';
+        if (repasar.length === 0) {
+            repasarHtml = '<div style="background:#dcfce7; color:#166534; padding:12px; border-radius:10px; font-size:14px; margin-top:12px;">🎉 ¡No hay temas flojos en este test!</div>';
+        } else {
+            repasarHtml = '<div style="margin-top:16px; text-align:left;"><div style="font-weight:700; color:#dc2626; margin-bottom:8px;">📚 Temas para repasar:</div>';
+            repasar.forEach(item => {
+                repasarHtml += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px; margin-bottom:6px;">
+                        <span style="font-size:13px; color:#7f1d1d;">${item.oa} (${item.c}/${item.t})</span>
+                        <button onclick="document.getElementById('simulacro-overlay').remove(); Fase1API.verMaterial('${item.oa}');"
+                            style="font-size:12px; background:#3b82f6; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; white-space:nowrap;">📺 Ver material</button>
+                    </div>`;
+            });
+            repasarHtml += '</div>';
+        }
+
+        const reiniciar = this.modo === 'simulacro'
+            ? 'SimulacroSystem.iniciar()'
+            : `SimulacroSystem.iniciarTest('${this.preguntas[0] && this.preguntas[0].oa_codigo ? this.preguntas[0].oa_codigo.charAt(0) : ''}')`;
 
         const ov = document.createElement('div');
         ov.id = 'simulacro-overlay';
-        ov.style = 'position:fixed; inset:0; z-index:10000; background:rgba(15,23,42,0.92); display:flex; align-items:center; justify-content:center; padding:16px;';
+        ov.style = 'position:fixed; inset:0; z-index:10000; background:rgba(15,23,42,0.92); display:flex; align-items:center; justify-content:center; padding:16px; overflow-y:auto;';
         ov.innerHTML = `
-            <div style="background:white; border-radius:18px; max-width:480px; width:100%; padding:28px; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,0.5);">
-                <div style="font-size:54px;">🏁</div>
-                <h2 style="margin:8px 0; color:#1e293b;">Resultado del Simulacro</h2>
-                <div style="font-size:46px; font-weight:800; color:${color};">${this.correctas}/${total}</div>
-                <div style="font-size:22px; color:${color}; margin-bottom:10px;">${pct}%</div>
-                <p style="color:#475569; font-size:16px;">${msg}</p>
-                <button onclick="SimulacroSystem.cerrar()" style="margin-top:14px; padding:12px 28px; font-size:16px; font-weight:bold; border:none; border-radius:12px; background:#3b82f6; color:white; cursor:pointer;">Cerrar</button>
-                <button onclick="SimulacroSystem.iniciar()" style="margin-top:10px; display:block; width:100%; padding:10px; font-size:14px; border:none; border-radius:10px; background:#e2e8f0; color:#334155; cursor:pointer;">🔄 Otro simulacro</button>
+            <div style="background:white; border-radius:18px; max-width:480px; width:100%; padding:24px; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,0.5); margin:16px 0;">
+                <div style="font-size:48px;">🏁</div>
+                <h2 style="margin:6px 0; color:#1e293b;">Resultado</h2>
+                <div style="font-size:42px; font-weight:800; color:${color};">${this.correctas}/${total}</div>
+                <div style="font-size:20px; color:${color}; margin-bottom:8px;">${pct}%</div>
+                <p style="color:#475569; font-size:15px;">${msg}</p>
+                ${repasarHtml}
+                <button onclick="SimulacroSystem.cerrar()" style="margin-top:16px; padding:12px 28px; font-size:16px; font-weight:bold; border:none; border-radius:12px; background:#3b82f6; color:white; cursor:pointer;">Cerrar</button>
             </div>`;
         document.body.appendChild(ov);
-
-        // Registrar el simulacro en BD (no bloquea si falla)
-        try {
-            supabaseClient.from('evaluaciones').insert({
-                oa_codigo: null, sesion_id: null,
-                correctas: this.correctas, total: total, porcentaje: pct,
-                detalle: { tipo: 'simulacro_mineduc' }
-            });
-        } catch (e) { console.warn('No se registró el simulacro:', e); }
     }
 };
 

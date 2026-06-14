@@ -7,6 +7,12 @@
 const Fase1API = {
     async init() {
         if (typeof supabaseClient === 'undefined') return;
+        // Generar repasos automáticos de OAs en riesgo de olvido (no bloquea si falla)
+        try {
+            if (typeof USER_ID !== 'undefined') {
+                await supabaseClient.rpc('generar_repasos_pendientes', { p_user: USER_ID });
+            }
+        } catch (e) { console.warn('No se generaron repasos automáticos:', e); }
         await this.renderMisiones();
         await this.renderStats();
     },
@@ -240,8 +246,20 @@ const SimulacroSystem = {
         el.style.color = this.tiempoRestante < 300 ? '#ef4444' : '#64748b'; // rojo en últimos 5 min
     },
 
+    leerPregunta(q, opciones) {
+        if (typeof VoiceEngine === 'undefined') return;
+        let texto = q.pregunta + '. ';
+        (opciones || []).forEach((op, i) => {
+            const letra = ['A', 'B', 'C', 'D'][i] || '';
+            texto += 'Opción ' + letra + ': ' + (op.text || '') + '. ';
+        });
+        VoiceEngine.stop();
+        VoiceEngine.speak(texto);
+    },
+
     cerrar() {
         this.detenerTimer();
+        if (typeof VoiceEngine !== 'undefined') VoiceEngine.stop();
         const ov = document.getElementById('simulacro-overlay');
         if (ov) ov.remove();
     },
@@ -273,12 +291,21 @@ const SimulacroSystem = {
                 <div style="height:8px; background:#e2e8f0; border-radius:4px; margin-bottom:16px; overflow:hidden;">
                     <div style="height:100%; width:${Math.round((this.idx / total) * 100)}%; background:#3b82f6;"></div>
                 </div>
-                <div style="font-size:20px; font-weight:700; color:#1e293b; margin-bottom:16px;">${q.pregunta}</div>
+                <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:16px;">
+                    <button id="sim-speak" title="Escuchar la pregunta" style="flex-shrink:0; width:44px; height:44px; border-radius:50%; border:none; background:#3b82f6; color:white; font-size:20px; cursor:pointer;">🔊</button>
+                    <div style="font-size:20px; font-weight:700; color:#1e293b;">${q.pregunta}</div>
+                </div>
                 <div id="sim-opts">${opcionesHtml}</div>
                 <div id="sim-feedback" style="margin-top:12px; font-size:15px; min-height:24px;"></div>
-                <button id="sim-cancel" style="margin-top:14px; background:none; border:none; color:#94a3b8; font-size:13px; cursor:pointer;">Salir del simulacro</button>
+                <button id="sim-cancel" style="margin-top:14px; background:none; border:none; color:#94a3b8; font-size:13px; cursor:pointer;">Salir</button>
             </div>`;
         document.body.appendChild(ov);
+
+        // Lectura en voz alta (Eliú tiene 6 años, puede no leer fluido)
+        const speakBtn = document.getElementById('sim-speak');
+        if (speakBtn) speakBtn.onclick = () => this.leerPregunta(q, opciones);
+        // Auto-leer al mostrar la pregunta
+        setTimeout(() => this.leerPregunta(q, opciones), 350);
 
         ov.querySelectorAll('.sim-opt').forEach(btn => {
             btn.onclick = () => this.responder(btn, q);

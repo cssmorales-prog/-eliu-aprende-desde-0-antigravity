@@ -873,11 +873,57 @@ const ParentDashboard = {
         this.renderAreasDebiles();  // refrescar
     },
 
+    // 📈 Gráfico de evolución: % de aciertos a lo largo del tiempo
+    async construirGraficoEvolucion() {
+        try {
+            const { data, error } = await supabaseClient
+                .from('evaluaciones')
+                .select('porcentaje, created_at')
+                .order('created_at', { ascending: true })
+                .limit(30);
+            if (error || !data || data.length < 2) {
+                return '<p style="font-size:13px; color:#94a3b8; margin-bottom:16px;">📈 El gráfico de evolución aparecerá cuando Eliú tenga más evaluaciones registradas.</p>';
+            }
+            const pts = data.map(d => Number(d.porcentaje) || 0);
+            const W = 320, H = 120, pad = 24;
+            const stepX = (W - pad * 2) / (pts.length - 1);
+            const coords = pts.map((p, i) => {
+                const x = pad + i * stepX;
+                const y = H - pad - (p / 100) * (H - pad * 2);
+                return [x, y];
+            });
+            const linea = coords.map((c, i) => (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1)).join(' ');
+            const puntos = coords.map(c => `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="3" fill="#3b82f6"/>`).join('');
+            const y60 = H - pad - 0.60 * (H - pad * 2);
+            const ultimo = pts[pts.length - 1];
+            const primero = pts[0];
+            const tendencia = ultimo > primero ? '📈 subiendo' : (ultimo < primero ? '📉 bajando' : '➡️ estable');
+            return `
+                <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <strong style="font-size:14px; color:#1e293b;">📈 Evolución (${pts.length} evaluaciones)</strong>
+                        <span style="font-size:12px; color:#64748b;">${tendencia}</span>
+                    </div>
+                    <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto;">
+                        <line x1="${pad}" y1="${y60.toFixed(1)}" x2="${W - pad}" y2="${y60.toFixed(1)}" stroke="#fca5a5" stroke-dasharray="4 4" stroke-width="1"/>
+                        <text x="${pad}" y="${(y60 - 4).toFixed(1)}" font-size="9" fill="#ef4444">60% (mínimo)</text>
+                        <path d="${linea}" fill="none" stroke="#3b82f6" stroke-width="2.5"/>
+                        ${puntos}
+                    </svg>
+                    <div style="font-size:11px; color:#94a3b8; text-align:center;">Cada punto es una evaluación, de la más antigua (izq) a la más nueva (der)</div>
+                </div>`;
+        } catch (e) {
+            return '';
+        }
+    },
+
     // 🧠 RETENCIÓN: ¿memorizó de verdad o solo de corto plazo?
     async renderRetencion() {
         const container = document.getElementById('parent-retencion-container');
         if (!container || typeof supabaseClient === 'undefined') return;
         container.innerHTML = '<div style="padding:20px; color:#64748b;">Analizando la retención… ⏳</div>';
+
+        const grafico = await this.construirGraficoEvolucion();
 
         const { data, error } = await supabaseClient
             .from('vista_retencion')
@@ -886,7 +932,7 @@ const ParentDashboard = {
 
         if (error) { container.innerHTML = '<div style="padding:20px; color:#ef4444;">Error al cargar retención.</div>'; return; }
         if (!data || data.length === 0) {
-            container.innerHTML = '<div style="padding:20px; color:#64748b;">Todavía no hay suficientes prácticas para medir la retención. Cuando Eliú repita un mismo tema varias veces, aquí verás si lo aprendió de verdad o solo lo recordó un rato.</div>';
+            container.innerHTML = grafico + '<div style="padding:20px; color:#64748b;">Todavía no hay suficientes prácticas para medir la retención por tema. Cuando Eliú repita un mismo tema varias veces, aquí verás si lo aprendió de verdad o solo lo recordó un rato.</div>';
             return;
         }
 
@@ -901,7 +947,7 @@ const ParentDashboard = {
         const orden = ['riesgo_olvido','olvidando','practicando','mejorando','recien_visto','memorizado'];
         data.sort((a,b) => orden.indexOf(a.estado_retencion) - orden.indexOf(b.estado_retencion));
 
-        let html = '<p style="font-size:13px; color:#64748b; margin-bottom:14px;">Esto distingue si Eliú <b>realmente aprendió</b> un tema (lo recuerda después de varios días) o si solo lo tuvo en memoria de corto plazo.</p>';
+        let html = grafico + '<p style="font-size:13px; color:#64748b; margin-bottom:14px;">Esto distingue si Eliú <b>realmente aprendió</b> un tema (lo recuerda después de varios días) o si solo lo tuvo en memoria de corto plazo.</p>';
         data.forEach(r => {
             const m = meta[r.estado_retencion] || meta.recien_visto;
             html += `

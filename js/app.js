@@ -119,20 +119,22 @@ const Fase1API = {
             .insert({ user_id: USER_ID, oa_codigo: oaCodigo, plan_id: planId })
             .select()
             .single();
-            
+
         if (error || !data) {
-            console.error(error);
+            console.error('Error al crear sesion:', error);
+            alert('No pude iniciar la mision. Detalle: ' + (error && error.message ? error.message : 'desconocido'));
             return;
         }
-        
+
         App.currentSesionId = data.id;
         App.currentPlanId = planId;
-        
+        App.currentOACodigo = oaCodigo;  // crítico para que Fase 2 cargue preguntas dinámicas
+
         let subject = 'lenguaje';
         if (oaCodigo.startsWith('M')) subject = 'matematica';
         else if (oaCodigo.startsWith('C')) subject = 'ciencias';
         else if (oaCodigo.startsWith('H')) subject = 'historia';
-        
+
         App.startSubjectLessons(subject);
     },
     

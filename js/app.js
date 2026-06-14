@@ -1439,9 +1439,11 @@ const Gamification = {
             }
         });
 
-        // Actualizar los textos de recomendación de las tarjetas de islas
-        document.getElementById('lbl-lenguaje-pág').innerText = `Jugando con los Sonidos: Pág. ${bookPages.jugandoSonidos} • Caligrafía: Pág. ${bookPages.caligrafia}`;
-        document.getElementById('lbl-matematica-pág').innerText = `Supermatemáticos 1: Pág. ${bookPages.supermatematicos}`;
+        // Actualizar los textos de recomendación de las tarjetas de islas (con guardas anti-null)
+        const lblLeng = document.getElementById('lbl-lenguaje-pág') || document.getElementById('lbl-lenguaje-pag');
+        if (lblLeng) lblLeng.innerText = `Jugando con los Sonidos: Pág. ${bookPages.jugandoSonidos} • Caligrafía: Pág. ${bookPages.caligrafia}`;
+        const lblMate = document.getElementById('lbl-matematica-pág') || document.getElementById('lbl-matematica-pag');
+        if (lblMate) lblMate.innerText = `Supermatemáticos 1: Pág. ${bookPages.supermatematicos}`;
     },
 
     // RENDER ÁLBUM DE STICKERS EN NIÑO

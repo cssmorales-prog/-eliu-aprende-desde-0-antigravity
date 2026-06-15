@@ -3425,9 +3425,7 @@ window.addEventListener('DOMContentLoaded', () => {
     
     App.init();
 
-    if (lastHabitsDate !== todayStr) {
-        HabitsManager.startCheckin();
-    } else {
-        App.showView('kids-dashboard-view');
-    }
+    // Mostrar SIEMPRE la pizarra principal al cargar (Eliú quiere ver su progreso).
+    // El check-in de hábitos queda disponible pero no bloquea la entrada.
+    App.showView('kids-dashboard-view');
 });

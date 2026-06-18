@@ -257,7 +257,7 @@ const SimulacroSystem = {
     // Test por asignatura (8 preguntas, sin cuenta regresiva) para identificar qué repasar
     async iniciarTest(asignatura) {
         const labels = { lenguaje: '📖 Test de Lenguaje', matematica: '🔢 Test de Matemática', ciencias: '🧪 Test de Ciencias', historia: '🗺️ Test de Historia' };
-        await this._cargar('generar_test', { p_asignatura: asignatura, p_limit: 8 }, 'test', 0, labels[asignatura] || '📝 Test');
+        await this._cargar('preguntas_para_asignatura', { p_asignatura: asignatura, p_user: USER_ID, p_limit: 8 }, 'test', 0, labels[asignatura] || '📝 Test');
     },
 
     async _cargar(rpc, params, modo, segundos, titulo) {
@@ -1834,59 +1834,46 @@ const App = {
             lesson = subject.lessons[1];
         }
 
-        // Fase 2: Evaluación Dinámica desde Supabase
-        if (typeof supabaseClient !== 'undefined' && App.currentOACodigo) {
+        // Evaluación dinámica desde Supabase: por OA (si vino de una misión)
+        // o por asignatura (si vino de tocar una isla). Siempre con rotación (menos vistas primero).
+        if (typeof supabaseClient !== 'undefined') {
             try {
-                const { data, error } = await supabaseClient.rpc('preguntas_para_oa', {
-                    p_oa: App.currentOACodigo,
-                    p_user: USER_ID,
-                    p_limit: 5
-                });
-
+                let data, error;
+                if (App.currentOACodigo) {
+                    ({ data, error } = await supabaseClient.rpc('preguntas_para_oa', {
+                        p_oa: App.currentOACodigo, p_user: USER_ID, p_limit: 5 }));
+                } else {
+                    ({ data, error } = await supabaseClient.rpc('preguntas_para_asignatura', {
+                        p_asignatura: subjectKey, p_user: USER_ID, p_limit: 5 }));
+                }
                 if (error) throw error;
 
-                if (data) {
-                    let dynamicNarrative = "¡Hola Eliu! ¡Es hora de un nuevo desafío! ¡Responde con mucha atención para ganar estrellas! ⭐";
-                    let dynamicQuestions = [];
-                    
-                    if (data.narrativa && Array.isArray(data.preguntas)) {
-                        dynamicNarrative = data.narrativa;
-                        dynamicQuestions = data.preguntas;
-                    } else if (Array.isArray(data)) {
-                        dynamicQuestions = data;
-                    }
-
-                    if (dynamicQuestions.length < 5) {
-                        console.warn(`[Fase 2] Banco de preguntas insuficiente para OA ${App.currentOACodigo}. Solo se encontraron ${dynamicQuestions.length} preguntas.`);
-                    }
-
-                    if (dynamicQuestions.length > 0) {
-                        lesson = {
-                            id: `dinamica_${App.currentOACodigo}`,
-                            oa_codigo: App.currentOACodigo,
-                            title: `Misión ${App.currentOACodigo}`,
-                            description: "Evaluación Dinámica",
-                            narrative: dynamicNarrative,
-                            questions: dynamicQuestions.map(q => ({
-                                id: q.id,
-                                type: "multiple",
-                                prompt: q.prompt || q.pregunta || "¿Pregunta?",
-                                contexto: q.contexto_narrativo,
-                                options: q.options || q.opciones || [
-                                    { text: "Opción A", correct: true },
-                                    { text: "Opción B", correct: false }
-                                ],
-                                synonymsExplain: q.synonymsExplain || q.explicacion || "¡Excelente trabajo!"
-                            }))
-                        };
-                    }
+                const dynamicQuestions = Array.isArray(data) ? data : [];
+                if (dynamicQuestions.length > 0) {
+                    lesson = {
+                        id: `dinamica_${App.currentOACodigo || subjectKey}`,
+                        oa_codigo: App.currentOACodigo || (dynamicQuestions[0] && dynamicQuestions[0].oa_codigo) || null,
+                        title: subject.title,
+                        description: "Evaluación Dinámica",
+                        narrative: "¡Hola Eliu! ¡Es hora de un nuevo desafío! Responde con atención para ganar estrellas ⭐",
+                        questions: dynamicQuestions.map(q => ({
+                            id: q.id,
+                            oa_codigo: q.oa_codigo,
+                            type: "multiple",
+                            prompt: q.prompt || q.pregunta || "¿Pregunta?",
+                            contexto: q.contexto_narrativo,
+                            options: q.options || q.opciones || [
+                                { text: "Opción A", correct: true },
+                                { text: "Opción B", correct: false }
+                            ],
+                            synonymsExplain: q.synonymsExplain || q.explicacion || "¡Excelente trabajo!"
+                        }))
+                    };
                 }
             } catch (e) {
-                console.error("Fase 2 Error cargando preguntas dinámicas:", e);
-                // Si falla, usa lección estática
+                console.error("Error cargando preguntas dinámicas:", e);
+                // Si falla, usa lección estática como respaldo
             }
-            
-            // Limpiar el OA actual
             App.currentOACodigo = null;
         }
 

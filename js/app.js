@@ -2067,50 +2067,68 @@ const App = {
     // 3. Finalizar lección con éxito y disparar videollamada metacognitiva
     async completeLessonSuccess() {
         const lesson = this.currentLesson;
-        
-        // HOOK 2: Al TERMINAR la sesión (registrar evaluación)
-        if (typeof supabaseClient !== 'undefined' && App.currentSesionId && lesson.oa_codigo) {
-            try {
-                await supabaseClient.rpc('registrar_evaluacion', {
-                    p_sesion: App.currentSesionId,
-                    p_oa: lesson.oa_codigo,
-                    p_correctas: App.correctAnswersCount || 0,
-                    p_total: lesson.questions ? lesson.questions.length : 0,
-                    p_detalle: { respuestas: App.responsesHistory || [] }
-                });
-            } catch (e) {
-                console.error("Error al registrar evaluacion:", e);
+
+        // Determinar la asignatura de esta lección
+        let subjectKey = 'matematica';
+        if (lesson.id && lesson.id.startsWith('lenguaje')) subjectKey = 'lenguaje';
+        if (lesson.id && lesson.id.startsWith('ciencias')) subjectKey = 'ciencias';
+        if (lesson.id && lesson.id.startsWith('historia')) subjectKey = 'historia';
+        // Si la lección dinámica trae oa_codigo, derivar asignatura de ahí (más fiable)
+        const oaLec = lesson.oa_codigo || (lesson.questions && lesson.questions[0] && lesson.questions[0].oa_codigo);
+        if (oaLec) {
+            if (oaLec.startsWith('M')) subjectKey = 'matematica';
+            else if (oaLec.startsWith('L')) subjectKey = 'lenguaje';
+            else if (oaLec.startsWith('C')) subjectKey = 'ciencias';
+            else if (oaLec.startsWith('H')) subjectKey = 'historia';
+        }
+
+        // REGISTRAR RESULTADOS POR OA (funciona desde isla, misión o test).
+        // Agrupa las respuestas por el OA de cada pregunta.
+        if (typeof supabaseClient !== 'undefined' && Array.isArray(lesson.questions)) {
+            const porOA = {};
+            lesson.questions.forEach((q, idx) => {
+                const oa = q.oa_codigo || lesson.oa_codigo;
+                if (!oa) return;
+                if (!porOA[oa]) porOA[oa] = { c: 0, t: 0 };
+                porOA[oa].t++;
+                const r = (App.responsesHistory || [])[idx];
+                if (r && r.correct) porOA[oa].c++;
+            });
+            for (const oa of Object.keys(porOA)) {
+                try {
+                    await supabaseClient.rpc('registrar_resultado_oa', {
+                        p_user: USER_ID, p_oa: oa,
+                        p_correctas: porOA[oa].c, p_total: porOA[oa].t
+                    });
+                } catch (e) { console.error('Error registrar_resultado_oa', oa, e); }
             }
         }
 
-        
-        // Fase 1: Marcar en base de datos de Supabase si aplica
-        if (typeof supabaseClient !== 'undefined' && App.currentPlanId) {
-            supabaseClient
-                .from('plan_estudio')
-                .update({ estado: 'completado', fecha_completada: new Date().toISOString() })
-                .eq('id', App.currentPlanId)
-                .then(({error}) => {
-                    if (error) console.error("Error actualizando plan:", error);
-                    else {
-                        Fase1API.renderMisiones(); // Refrescar lista de misiones
-                        Fase1API.renderStats(); // Refrescar stats
-                    }
-                });
+        // MARCAR LA MISIÓN DEL DÍA COMO HECHA
+        if (typeof supabaseClient !== 'undefined') {
+            try {
+                if (App.currentPlanId) {
+                    // Vino de una tarjeta de misión: marcar ese item exacto
+                    await supabaseClient.from('plan_estudio')
+                        .update({ estado: 'completado', fecha_completada: new Date().toISOString() })
+                        .eq('id', App.currentPlanId);
+                } else {
+                    // Vino de una isla: marcar la misión pendiente del día para esa asignatura
+                    await supabaseClient.rpc('completar_mision_dia', { p_user: USER_ID, p_asignatura: subjectKey });
+                }
+            } catch (e) { console.error('Error marcando misión:', e); }
+            App.currentPlanId = null;
+            App.currentSesionId = null;
+            // Refrescar pizarra
+            try { Fase1API.renderMisiones(); Fase1API.renderStats(); Fase1API.renderMiProgreso(); } catch (e) {}
         }
-        
-        // Guardar lección como completada
+
+        // Guardar lección como completada (local)
         const completed = ParentDashboard.getCompletedLessons();
-        if (!completed.includes(lesson.id)) {
+        if (lesson.id && !completed.includes(lesson.id)) {
             completed.push(lesson.id);
             localStorage.setItem('eliu_aprende_lecciones_completas', JSON.stringify(completed));
         }
-
-        // Registrar progreso diario
-        let subjectKey = 'matematica';
-        if (lesson.id.startsWith('lenguaje')) subjectKey = 'lenguaje';
-        if (lesson.id.startsWith('ciencias')) subjectKey = 'ciencias';
-        if (lesson.id.startsWith('historia')) subjectKey = 'historia';
 
         Gamification.completeDailyTask(subjectKey);
         Gamification.awardStars(20);

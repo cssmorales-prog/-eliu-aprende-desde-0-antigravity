@@ -93,30 +93,34 @@ const Fase1API = {
                 </div>
             </div>`;
 
-        const atrasados = cola.filter(i => i.fecha_programada < hoyStr);
-        const hoyItems = cola.filter(i => i.fecha_programada >= hoyStr);
-
         let html = '';
 
-        // Lo de HOY primero (lo más importante y motivante)
-        if (hoyItems.length) {
+        if (!cola.length) {
+            html = `<div style="background:#dcfce7; color:#166534; padding:16px; border-radius:12px; font-size:15px;">🎉 ¡Estás al día! No tienes actividades pendientes.</div>`;
+            container.innerHTML = html;
+            return;
+        }
+
+        // BLOQUEO POR DÍA: la materia no hecha bloquea el día siguiente.
+        // cola viene ordenada por fecha ASC -> el primer día pendiente es el más antiguo.
+        const diaPendiente = cola[0].fecha_programada;
+        const delDia = cola.filter(i => i.fecha_programada === diaPendiente);
+        const hayDiasSiguientes = cola.some(i => i.fecha_programada !== diaPendiente);
+
+        if (diaPendiente >= hoyStr) {
             html += `<h3 style="color: #0077b6; font-size: 16px; margin-top: 4px;">🟦 PARA HOY</h3>`;
-            hoyItems.forEach(item => { html += tarjeta(item); });
+        } else {
+            const diff = Math.round((new Date(hoyStr) - new Date(diaPendiente)) / 86400000);
+            html += `<h3 style="color: #d90429; font-size: 16px; margin-top: 4px;">📌 Primero termina este día (${diaPendiente}, hace ${diff} día${diff===1?'':'s'})</h3>
+                <p style="font-size:13px; color:#9a3412; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:10px; margin:6px 0;">
+                Hay que completar la materia de este día antes de seguir con lo nuevo. Así Eliú no se salta nada importante 💪</p>`;
         }
 
-        // Atrasados: solo los 3 más antiguos (más urgentes), el resto se resume
-        if (atrasados.length) {
-            html += `<h3 style="color: #d90429; font-size: 16px; margin-top: 14px;">📌 Para ponerte al día</h3>`;
-            atrasados.slice(0, MAX_ATRASADOS).forEach(item => { html += tarjeta(item); });
-            const restantes = atrasados.length - Math.min(MAX_ATRASADOS, atrasados.length);
-            if (restantes > 0) {
-                html += `<div style="background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; border-radius:10px; padding:12px; font-size:14px; margin-top:6px;">
-                    Tienes <b>${restantes}</b> actividad(es) más de días pasados. Completa primero estas de arriba y luego seguimos 💪</div>`;
-            }
-        }
+        delDia.forEach(item => { html += tarjeta(item); });
 
-        if (!html) {
-            html = `<div style="background:#dcfce7; color:#166534; padding:16px; border-radius:12px; font-size:15px;">🎉 ¡Estás al día! No tienes actividades pendientes hoy.</div>`;
+        if (hayDiasSiguientes) {
+            html += `<div style="background:#f1f5f9; border:1px dashed #94a3b8; color:#475569; border-radius:10px; padding:12px; font-size:14px; margin-top:10px; text-align:center;">
+                🔒 Cuando completes <b>todo este día</b>, se desbloquea el siguiente.</div>`;
         }
 
         container.innerHTML = html;

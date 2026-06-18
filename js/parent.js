@@ -170,9 +170,9 @@ const ParentDashboard = {
     // 📚 CARGAR Y GUARDAR PÁGINAS DE LIBROS
     loadBookPages() {
         const defaultPages = {
-            supermatematicos: 56,
-            jugandoSonidos: 49,
-            caligrafia: 75
+            supermatematicos: 70,
+            jugandoSonidos: 64,
+            caligrafia: 108
         };
 
         const saved = localStorage.getItem('eliu_aprende_paginas');
@@ -206,9 +206,9 @@ const ParentDashboard = {
 
     getBookPages() {
         const defaultPages = {
-            supermatematicos: 56,
-            jugandoSonidos: 49,
-            caligrafia: 75
+            supermatematicos: 70,
+            jugandoSonidos: 64,
+            caligrafia: 108
         };
         const saved = localStorage.getItem('eliu_aprende_paginas');
         return saved ? JSON.parse(saved) : defaultPages;

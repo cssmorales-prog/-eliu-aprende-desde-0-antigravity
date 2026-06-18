@@ -1023,12 +1023,15 @@ const ReadingManager = {
         }
 
         // Resetear botones
-        document.getElementById('btn-start-reading-practice').style.display = 'block';
+        const sb = document.getElementById('btn-start-reading-practice');
+        sb.style.display = 'block'; sb.innerText = '🔊 Escuchar el cuento';
         document.getElementById('btn-next-story-step').style.display = 'none';
         document.getElementById('reading-mic-indicator').style.display = 'none';
-        
+        const viejoLeoYo = document.getElementById('btn-leo-yo');
+        if (viejoLeoYo) viejoLeoYo.remove();
+
         const speechBubble = document.getElementById('reading-speech-bubble');
-        speechBubble.innerText = `¡Hola Eliu! Primero yo leeré para ti. Fíjate en las palabras que se alumbran. ¡Luego te toca a ti con tu micrófono! 🤖`;
+        speechBubble.innerText = `¡Hola Eliu! Toca "Escuchar el cuento" y fíjate en las palabras que se van pintando. ¡Luego puedes leerlo tú! 🤖`;
         
         App.showView('reading-view');
         
@@ -1087,12 +1090,34 @@ const ReadingManager = {
     finDeLecturaGuiada() {
         this.words.forEach(x => { const wel = document.getElementById(x.id); if (wel) wel.classList.remove('word-highlight'); });
         const bubble = document.getElementById('reading-speech-bubble');
-        if (bubble) bubble.innerText = '¡Muy bien! Ahora léelo tú en voz alta. Cuando termines, toca "Continuar" 🎉';
+        if (bubble) bubble.innerText = '¡Muy bien! Ahora puedes leer tú en voz alta para que se marquen las palabras, o pasar a las preguntas 🎉';
         const nextBtn = document.getElementById('btn-next-story-step');
         if (nextBtn) { nextBtn.style.display = 'block'; nextBtn.innerText = '✅ Continuar a las preguntas'; }
         const startBtn = document.getElementById('btn-start-reading-practice');
         if (startBtn) { startBtn.style.display = 'block'; startBtn.innerText = '🔁 Escuchar otra vez'; }
-        try { if (typeof VoiceEngine !== 'undefined') VoiceEngine.speak('Ahora léelo tú en voz alta. Cuando termines, toca Continuar.'); } catch (e) {}
+        this.mostrarBotonLeoYo();
+        try { if (typeof VoiceEngine !== 'undefined') VoiceEngine.speak('Ahora puedes leer tú en voz alta, o pasar a las preguntas.'); } catch (e) {}
+    },
+
+    // Botón para que Eliú lea él y se marquen sus palabras (reconocimiento de voz)
+    mostrarBotonLeoYo() {
+        const cont = document.getElementById('btn-next-story-step');
+        if (!cont || !cont.parentNode) return;
+        if (document.getElementById('btn-leo-yo')) return;  // no duplicar
+        const soporta = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+        const btn = document.createElement('button');
+        btn.id = 'btn-leo-yo';
+        btn.innerText = '🎙️ Leo yo (que se marquen mis palabras)';
+        btn.style = 'display:block; width:100%; margin:10px 0; padding:14px; font-size:16px; font-weight:bold; border:none; border-radius:12px; background:#8b5cf6; color:white; cursor:pointer;';
+        btn.onclick = () => {
+            if (!soporta) {
+                alert('Este dispositivo no permite escuchar la lectura por micrófono. Igual puedes leer en voz alta y luego tocar "Continuar a las preguntas" 😊');
+                return;
+            }
+            this.detenerKaraoke();
+            this.startChildReadingPhase();
+        };
+        cont.parentNode.insertBefore(btn, cont);
     },
 
     highlightWordByCharIndex(charIndex) {

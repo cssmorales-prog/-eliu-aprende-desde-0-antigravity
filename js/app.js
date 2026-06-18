@@ -276,6 +276,7 @@ const SimulacroSystem = {
         this.idx = 0;
         this.correctas = 0;
         this.resultadosPorOA = {};
+        this.errores = [];
         this.modo = modo;
         this.titulo = titulo;
         this.tiempoRestante = segundos;
@@ -399,6 +400,15 @@ const SimulacroSystem = {
             btn.style.background = '#fee2e2';
             if (typeof SoundManager !== 'undefined') SoundManager.play('wrong');
             fb.innerHTML = '<span style="color:#ef4444; font-weight:700;">❌ Casi.</span> ' + (q.explicacion || '');
+            // Guardar el error para mostrarlo al final
+            const ops = Array.isArray(q.opciones) ? q.opciones : (q.options || []);
+            const correcta = ops.find(o => o.correct === true);
+            if (!this.errores) this.errores = [];
+            this.errores.push({
+                pregunta: q.pregunta,
+                eligio: btn.innerText.trim(),
+                correcta: correcta ? correcta.text : '—'
+            });
         }
         // Botón siguiente
         const next = document.createElement('button');
@@ -460,6 +470,21 @@ const SimulacroSystem = {
             ? 'SimulacroSystem.iniciar()'
             : `SimulacroSystem.iniciarTest('${this.preguntas[0] && this.preguntas[0].oa_codigo ? this.preguntas[0].oa_codigo.charAt(0) : ''}')`;
 
+        // Revisión: en qué preguntas se equivocó (con la respuesta correcta)
+        let erroresHtml = '';
+        if (this.errores && this.errores.length > 0) {
+            erroresHtml = '<div style="margin-top:16px; text-align:left;"><div style="font-weight:700; color:#b45309; margin-bottom:8px;">📋 Revisemos lo que falló:</div>';
+            this.errores.forEach(e => {
+                erroresHtml += `
+                    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:10px; margin-bottom:8px;">
+                        <div style="font-size:13px; font-weight:600; color:#1e293b; margin-bottom:4px;">${e.pregunta}</div>
+                        <div style="font-size:12px; color:#dc2626;">Marcó: ${e.eligio}</div>
+                        <div style="font-size:12px; color:#16a34a;">✅ Correcta: ${e.correcta}</div>
+                    </div>`;
+            });
+            erroresHtml += '</div>';
+        }
+
         const ov = document.createElement('div');
         ov.id = 'simulacro-overlay';
         ov.style = 'position:fixed; inset:0; z-index:10000; background:rgba(15,23,42,0.92); display:flex; align-items:center; justify-content:center; padding:16px; overflow-y:auto;';
@@ -470,6 +495,7 @@ const SimulacroSystem = {
                 <div style="font-size:42px; font-weight:800; color:${color};">${this.correctas}/${total}</div>
                 <div style="font-size:20px; color:${color}; margin-bottom:8px;">${pct}%</div>
                 <p style="color:#475569; font-size:15px;">${msg}</p>
+                ${erroresHtml}
                 ${repasarHtml}
                 <button onclick="SimulacroSystem.cerrar()" style="margin-top:16px; padding:12px 28px; font-size:16px; font-weight:bold; border:none; border-radius:12px; background:#3b82f6; color:white; cursor:pointer;">Cerrar</button>
             </div>`;
@@ -901,6 +927,7 @@ const ReadingManager = {
     stories: [
         {
             title: "Tito el Robot y su Bloque Dorado",
+            emoji: "🤖🚀",
             text: "Tito es un robot de bloques muy feliz. Él vive en un cohete celeste. Un día, ¡oh no! Tito perdió su tuerca dorada. La buscó en el espacio y la encontró bajo un bloque de Roblox. ¡Qué gran felicidad!",
             questions: [
                 {
@@ -916,6 +943,7 @@ const ReadingManager = {
         },
         {
             title: "La Aventura de los Copihues",
+            emoji: "🌺🌿",
             text: "En los bosques del sur de Chile nace una flor roja. Esta flor tiene forma de campana y se llama Copihue. El copihue es un símbolo patrio hermoso. ¡Mira cómo cuelga de las ramas verdes bajo la lluvia!",
             questions: [
                 {
@@ -965,9 +993,11 @@ const ReadingManager = {
                 };
             });
             
-            storyBox.innerHTML = this.words.map(w => {
-                return `<span class="reading-word" id="${w.id}">${w.originalText}</span>`;
-            }).join(" ");
+            const ilustracion = story.emoji ? `<div style="font-size:64px; text-align:center; margin-bottom:14px;">${story.emoji}</div>` : '';
+            storyBox.innerHTML = ilustracion + `<div style="font-size:22px; font-weight:700; text-align:center; color:#1e293b; margin-bottom:10px;">${story.title}</div>` +
+                this.words.map(w => {
+                    return `<span class="reading-word" id="${w.id}">${w.originalText}</span>`;
+                }).join(" ");
 
             // Asignar click sobre palabras individuales para escucharlas despacio
             this.words.forEach(w => {
@@ -1007,81 +1037,62 @@ const ReadingManager = {
         }, 400);
     },
 
+    slowReadingActive: false,
+    _karaokeTimer: null,
+
     startReading() {
-        SoundManager.play('click');
-        this.slowReadingActive = false; // Cortar lecturas anteriores
-        
-        const story = this.stories[this.storyIndex];
-        document.getElementById('btn-start-reading-practice').style.display = 'none';
-        
-        // Quitar clases anteriores
-        this.words.forEach(w => {
-            const el = document.getElementById(w.id);
-            if (el) el.className = 'reading-word';
-        });
-
-        // Detectar ritmo seleccionado
-        const paceEl = document.querySelector('input[name="reading-pace"]:checked');
-        const pace = paceEl ? paceEl.value : 'normal';
-
-        if (pace === 'slow') {
-            this.readSlowly();
-        } else {
-            // Eliubot lee el cuento corrido
-            VoiceEngine.speak(story.text, () => {
-                // Fin de la lectura guiada de Eliubot
-                setTimeout(() => {
-                    this.startChildReadingPhase();
-                }, 1000);
-            });
-        }
+        try { SoundManager.play('click'); } catch (e) {}
+        this.detenerKaraoke();
+        const startBtn = document.getElementById('btn-start-reading-practice');
+        if (startBtn) startBtn.style.display = 'none';
+        // Limpiar resaltados previos
+        this.words.forEach(w => { const el = document.getElementById(w.id); if (el) el.className = 'reading-word'; });
+        this.leerCuentoKaraoke();
     },
 
-    slowReadingActive: false,
-    async readSlowly() {
-        this.slowReadingActive = true;
-        const delay = 800; // pausa en milisegundos entre palabras
-
-        for (let i = 0; i < this.words.length; i++) {
-            if (!this.slowReadingActive || !this.active) break;
-            
-            const w = this.words[i];
-            const el = document.getElementById(w.id);
-
-            // Quitar highlights anteriores
-            this.words.forEach(x => {
-                const wel = document.getElementById(x.id);
-                if (wel) wel.classList.remove('word-highlight');
-            });
-
-            if (el) {
-                el.classList.add('word-highlight');
-                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-
-            // Hablar palabra individual de forma asíncrona
-            await new Promise(resolve => {
-                VoiceEngine.speak(w.cleanText, resolve);
-            });
-
-            // Esperar el delay
-            await new Promise(resolve => setTimeout(resolve, delay));
-        }
-
-        // Quitar highlight final
-        this.words.forEach(x => {
-            const wel = document.getElementById(x.id);
-            if (wel) wel.classList.remove('word-highlight');
-        });
-
+    detenerKaraoke() {
         this.slowReadingActive = false;
+        if (this._karaokeTimer) { clearTimeout(this._karaokeTimer); this._karaokeTimer = null; }
+        try { if (typeof VoiceEngine !== 'undefined') VoiceEngine.stop(); } catch (e) {}
+    },
 
-        // Pasar a fase activa del niño
-        if (this.active) {
-            setTimeout(() => {
-                this.startChildReadingPhase();
-            }, 1000);
-        }
+    // KARAOKE: resalta palabra por palabra con tiempo fijo. Avanza aunque el audio
+    // esté bloqueado (no depende del callback de TTS, que en tablets puede no dispararse).
+    leerCuentoKaraoke() {
+        this.detenerKaraoke();
+        this.slowReadingActive = true;
+        const bubble = document.getElementById('reading-speech-bubble');
+        if (bubble) bubble.innerText = 'Sigue las palabras que se van pintando 👀✨';
+        let i = 0;
+        const self = this;
+        const paso = () => {
+            const rv = document.getElementById('reading-view');
+            const visible = rv && rv.classList.contains('active');
+            if (!self.slowReadingActive || !visible) { self.detenerKaraoke(); return; }
+            // limpiar anterior
+            self.words.forEach(x => { const wel = document.getElementById(x.id); if (wel) wel.classList.remove('word-highlight'); });
+            if (i >= self.words.length) { self.slowReadingActive = false; self.finDeLecturaGuiada(); return; }
+            const w = self.words[i];
+            const el = document.getElementById(w.id);
+            if (el) { el.classList.add('word-highlight'); el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+            // audio best-effort, sin bloquear el avance
+            try { if (typeof VoiceEngine !== 'undefined') { VoiceEngine.stop(); VoiceEngine.speak(w.cleanText); } } catch (e) {}
+            i++;
+            const ms = Math.min(1100, 480 + w.cleanText.length * 65);  // palabras largas duran un poco más
+            self._karaokeTimer = setTimeout(paso, ms);
+        };
+        paso();
+    },
+
+    finDeLecturaGuiada() {
+        this.words.forEach(x => { const wel = document.getElementById(x.id); if (wel) wel.classList.remove('word-highlight'); });
+        const bubble = document.getElementById('reading-speech-bubble');
+        if (bubble) bubble.innerText = '¡Muy bien! Ahora léelo tú en voz alta. Cuando termines, toca "Continuar" 🎉';
+        const nextBtn = document.getElementById('btn-next-story-step');
+        if (nextBtn) { nextBtn.style.display = 'block'; nextBtn.innerText = '✅ Continuar a las preguntas'; }
+        const startBtn = document.getElementById('btn-start-reading-practice');
+        if (startBtn) { startBtn.style.display = 'block'; startBtn.innerText = '🔁 Escuchar otra vez'; }
+        try { if (typeof VoiceEngine !== 'undefined') VoiceEngine.speak('Ahora léelo tú en voz alta. Cuando termines, toca Continuar.'); } catch (e) {}
     },
 
     highlightWordByCharIndex(charIndex) {

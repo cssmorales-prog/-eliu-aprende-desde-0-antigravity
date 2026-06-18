@@ -16,6 +16,7 @@ const Fase1API = {
         await this.renderMisiones();
         await this.renderStats();
         await this.renderMiProgreso();
+        try { CalendarSystem.render(); } catch (e) { console.warn('Calendario:', e); }
     },
 
     // 🌟 Panel motivador para Eliú: cuánto lleva aprendido + gráfico de cómo va
@@ -243,6 +244,77 @@ const Fase1API = {
 };
 
 // 📝 SISTEMA DE TESTS / SIMULACRO MINEDUC + diagnóstico de qué repasar
+// 📅 CALENDARIO MENSUAL: avanza con los días, muestra hoy, feriados y el examen
+const CalendarSystem = {
+    offsetMes: 0,
+    feriados: {
+        '2026-01-01': 'Año Nuevo', '2026-04-03': 'Viernes Santo', '2026-04-04': 'Sábado Santo',
+        '2026-05-01': 'Día del Trabajo', '2026-05-21': 'Glorias Navales',
+        '2026-06-20': 'Pueblos Indígenas', '2026-06-29': 'San Pedro y San Pablo',
+        '2026-07-16': 'Virgen del Carmen', '2026-08-15': 'Asunción',
+        '2026-09-18': 'Fiestas Patrias', '2026-09-19': 'Glorias del Ejército',
+        '2026-10-12': 'Encuentro 2 Mundos', '2026-10-31': 'Iglesias Evangélicas',
+        '2026-11-01': 'Todos los Santos', '2026-12-08': 'Inmaculada Concepción', '2026-12-25': 'Navidad'
+    },
+    examen: '2026-10-15',
+
+    ymd(d) {
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    },
+
+    render() {
+        const cont = document.getElementById('calendario-mes');
+        if (!cont) return;
+        const hoy = new Date();
+        const hoyStr = this.ymd(hoy);
+        const base = new Date(hoy.getFullYear(), hoy.getMonth() + this.offsetMes, 1);
+        const anio = base.getFullYear();
+        const mes = base.getMonth();
+        const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+        // primer día de la semana (lunes=0)
+        let primerDia = new Date(anio, mes, 1).getDay(); // 0=domingo
+        primerDia = (primerDia === 0) ? 6 : primerDia - 1;
+        const diasEnMes = new Date(anio, mes+1, 0).getDate();
+
+        let celdas = '';
+        for (let i=0; i<primerDia; i++) celdas += '<div></div>';
+        for (let d=1; d<=diasEnMes; d++) {
+            const fecha = new Date(anio, mes, d);
+            const fstr = this.ymd(fecha);
+            const esHoy = fstr === hoyStr;
+            const esFeriado = this.feriados[fstr];
+            const esExamen = fstr === this.examen;
+            let bg = 'transparent', color = '#1e293b', borde = 'transparent', extra = '';
+            if (esFeriado) { color = '#dc2626'; }
+            if (esExamen) { bg = '#fde68a'; extra = '🎓'; }
+            if (esHoy) { bg = '#3b82f6'; color = 'white'; borde = '#1d4ed8'; }
+            celdas += `<div title="${esExamen?'EXAMEN MINEDUC':(esFeriado||'')}" style="aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:8px; font-size:13px; font-weight:${esHoy||esExamen?'800':'500'}; background:${bg}; color:${color}; border:2px solid ${borde};">
+                <span>${d}</span>${esExamen?`<span style="font-size:11px;">🎓</span>`:(esFeriado?`<span style="font-size:8px; line-height:1;">●</span>`:'')}</div>`;
+        }
+
+        // días al examen
+        const diffExam = Math.ceil((new Date(this.examen) - hoy) / 86400000);
+
+        cont.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <button onclick="CalendarSystem.offsetMes--; CalendarSystem.render();" style="border:none; background:#eff6ff; color:#2563eb; font-size:18px; width:32px; height:32px; border-radius:8px; cursor:pointer;">‹</button>
+                <strong style="font-size:16px; color:#1e293b;">📅 ${meses[mes]} ${anio}</strong>
+                <button onclick="CalendarSystem.offsetMes++; CalendarSystem.render();" style="border:none; background:#eff6ff; color:#2563eb; font-size:18px; width:32px; height:32px; border-radius:8px; cursor:pointer;">›</button>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:3px; text-align:center; font-size:10px; color:#94a3b8; font-weight:700; margin-bottom:4px;">
+                <div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:3px;">${celdas}</div>
+            <div style="display:flex; gap:12px; justify-content:center; margin-top:10px; font-size:11px; color:#64748b; flex-wrap:wrap;">
+                <span><span style="display:inline-block; width:10px; height:10px; background:#3b82f6; border-radius:3px; vertical-align:middle;"></span> Hoy</span>
+                <span><span style="color:#dc2626;">●</span> Feriado</span>
+                <span>🎓 Examen</span>
+                <span style="font-weight:700; color:#7c3aed;">Faltan ${diffExam} días</span>
+            </div>`;
+    }
+};
+
 const SimulacroSystem = {
     preguntas: [],
     idx: 0,

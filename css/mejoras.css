@@ -1,0 +1,126 @@
+/* ==========================================================================
+   MEJORAS VISUALES — capa que se carga al final para dar vida a la app
+   sin romper los estilos existentes. Pensado para motivar a un niño de 6.
+   ========================================================================== */
+
+/* Fuente divertida y redondeada para títulos y botones */
+h1, h2, h3, .navbar, button, .island-card span, .btn-activity-submit, .btn-canvas {
+    font-family: 'Fredoka', 'Baloo 2', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Fondo alegre y vivo con un degradado suave que se mueve lento */
+body {
+    background: linear-gradient(135deg, #e0f2fe 0%, #fae8ff 35%, #fef9c3 70%, #dcfce7 100%) !important;
+    background-size: 400% 400% !important;
+    animation: fondoVivo 22s ease infinite;
+}
+@keyframes fondoVivo {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Tarjetas más redondeadas, con sombra suave y rebote al tocar */
+.card {
+    border-radius: 20px !important;
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.12) !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+}
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(99, 102, 241, 0.22) !important;
+}
+
+/* Botones grandes, con degradado y animación al presionar */
+button {
+    border-radius: 14px !important;
+    transition: transform 0.12s ease, box-shadow 0.18s ease, filter 0.18s ease !important;
+    letter-spacing: 0.2px;
+}
+button:active {
+    transform: scale(0.94);
+}
+.btn-activity-submit {
+    background: linear-gradient(135deg, #34d399 0%, #059669 100%) !important;
+    box-shadow: 0 5px 0 #047857, 0 8px 16px rgba(5,150,105,0.3) !important;
+    border: none !important;
+}
+.btn-activity-submit:active {
+    box-shadow: 0 2px 0 #047857 !important;
+    transform: translateY(3px) scale(0.98);
+}
+.btn-canvas {
+    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%) !important;
+    box-shadow: 0 5px 0 #1e40af, 0 8px 16px rgba(37,99,235,0.3) !important;
+    border: none !important;
+}
+.btn-canvas:active {
+    box-shadow: 0 2px 0 #1e40af !important;
+    transform: translateY(3px) scale(0.98);
+}
+
+/* Islas de materias: saltan al pasar/tocar, con borde de color */
+.island-card {
+    border-radius: 22px !important;
+    transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s ease !important;
+    cursor: pointer;
+}
+.island-card:hover {
+    transform: translateY(-6px) scale(1.04) rotate(-1deg);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.18) !important;
+}
+.island-card:active { transform: scale(0.97); }
+
+/* Botones flotantes (micrófono / simulacro): latido suave para llamar la atención */
+#btn-floating-mic, #btn-floating-sim, .btn-call-mic {
+    animation: latido 2.2s ease-in-out infinite;
+}
+@keyframes latido {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+/* La mascota de Eliubot flota suavecito */
+#kids-mascot-avatar, .robot-avatar, #dashboard-mic-container img {
+    animation: flotar 3s ease-in-out infinite;
+}
+@keyframes flotar {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+/* Títulos con un poco más de gracia */
+h2, h3 {
+    letter-spacing: 0.3px;
+}
+
+/* Estrellas y badges con un pop alegre cuando aparecen */
+.star, .badge, [class*="estrella"] {
+    animation: pop 0.5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes pop {
+    0% { transform: scale(0); }
+    70% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}
+
+/* Palabra resaltada en el Taller de Lectura: más vistosa */
+.word-highlight {
+    background: linear-gradient(135deg, #fde047, #f59e0b) !important;
+    color: #1e293b !important;
+    border-radius: 8px !important;
+    padding: 2px 6px !important;
+    transform: scale(1.12);
+    display: inline-block;
+    box-shadow: 0 2px 8px rgba(245,158,11,0.5);
+    transition: all 0.15s ease;
+}
+
+/* Misiones "PARA HOY": un brillo sutil para que se note que es lo importante */
+#misiones-lista .card:first-of-type {
+    border: 2px solid #a5b4fc;
+}
+
+/* Scrollbar más amable (desktop) */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 8px; }

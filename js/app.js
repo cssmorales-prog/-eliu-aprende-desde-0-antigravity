@@ -1779,6 +1779,127 @@ const VideoCallSystem = {
     }
 };
 
+// 🌎 ISLA DE IDIOMAS — módulo autónomo (no depende de Supabase). Inglés y Chino mandarín.
+// Pensado para un niño de 6: tocar para escuchar + canciones en YouTube. Sin micrófono ni datos externos.
+const LanguageLab = {
+    DATA: {
+        ingles: {
+            titulo: '🇬🇧 Isla del Inglés', badge: 'English', color: '#2563eb', light: '#dbeafe', ttsLang: 'en-US',
+            intro: '¡Toca una palabra para escucharla! 🔊  Y mira las canciones 🎵',
+            canciones: [
+                { t: '👋 Saludos (Hello)', q: 'Super Simple Songs Hello' },
+                { t: '🔤 El Abecedario (ABC)', q: 'Super Simple Songs ABC alphabet' },
+                { t: '🔢 Números (Numbers)', q: 'Super Simple Songs numbers count to ten' },
+                { t: '🎨 Colores (Colors)', q: 'Super Simple Songs colors song' },
+                { t: '🐶 Animales (Animals)', q: 'Super Simple Songs animal sounds song' }
+            ],
+            grupos: [
+                { nombre: '👋 Saludos', items: [
+                    ['Hello','Hola','👋'],['Goodbye','Adiós','✋'],['Thank you','Gracias','🙏'],
+                    ['Please','Por favor','🥺'],['Yes','Sí','✅'],['No','No','❌'] ] },
+                { nombre: '🔢 Números', items: [
+                    ['One','Uno','1️⃣'],['Two','Dos','2️⃣'],['Three','Tres','3️⃣'],
+                    ['Four','Cuatro','4️⃣'],['Five','Cinco','5️⃣'],['Ten','Diez','🔟'] ] },
+                { nombre: '🎨 Colores', items: [
+                    ['Red','Rojo','🔴'],['Blue','Azul','🔵'],['Green','Verde','🟢'],['Yellow','Amarillo','🟡'] ] },
+                { nombre: '🐶 Animales', items: [
+                    ['Dog','Perro','🐶'],['Cat','Gato','🐱'],['Bird','Pájaro','🐦'],['Fish','Pez','🐟'] ] }
+            ]
+        },
+        chino: {
+            titulo: '🐉 Isla del Chino', badge: '中文', color: '#dc2626', light: '#fee2e2', ttsLang: 'zh-CN',
+            intro: '¡Toca un carácter para oírlo en mandarín! 🔊  (chino · pinyin)',
+            canciones: [
+                { t: '👋 你好 Hola (Hello)', q: 'Chinese song for kids nihao hello 你好' },
+                { t: '🔢 Números 1-10', q: 'Chinese numbers song for kids one to ten' },
+                { t: '🎨 Colores', q: 'Chinese colors song for kids' },
+                { t: '🐶 Animales', q: 'Chinese animals song for kids' },
+                { t: '🎵 Canciones 儿歌', q: 'Chinese nursery rhymes for kids 儿歌' }
+            ],
+            grupos: [
+                { nombre: '👋 Saludos', items: [
+                    ['你好','Hola · nǐ hǎo','👋'],['谢谢','Gracias · xièxie','🙏'],
+                    ['再见','Adiós · zàijiàn','✋'],['是','Sí · shì','✅'],['不','No · bù','❌'] ] },
+                { nombre: '🔢 Números', items: [
+                    ['一','1 · yī','1️⃣'],['二','2 · èr','2️⃣'],['三','3 · sān','3️⃣'],
+                    ['四','4 · sì','4️⃣'],['五','5 · wǔ','5️⃣'],['十','10 · shí','🔟'] ] },
+                { nombre: '🎨 Colores', items: [
+                    ['红','Rojo · hóng','🔴'],['蓝','Azul · lán','🔵'],['绿','Verde · lǜ','🟢'],['黄','Amarillo · huáng','🟡'] ] },
+                { nombre: '🐶 Animales', items: [
+                    ['狗','Perro · gǒu','🐶'],['猫','Gato · māo','🐱'],['鸟','Pájaro · niǎo','🐦'],['鱼','Pez · yú','🐟'] ] }
+            ]
+        }
+    },
+
+    open(lang) {
+        const d = this.DATA[lang];
+        if (!d) return;
+        if (typeof VoiceEngine !== 'undefined') VoiceEngine.stop();
+
+        const card = document.getElementById('language-card');
+        const header = document.getElementById('language-header');
+        const title = document.getElementById('language-title');
+        const badge = document.getElementById('language-badge');
+        if (card) card.style.borderColor = d.color;
+        if (header) header.style.borderColor = d.color;
+        if (title) { title.textContent = d.titulo; title.style.color = d.color; }
+        if (badge) { badge.textContent = d.badge; badge.style.background = d.light; badge.style.color = d.color; }
+
+        const cont = document.getElementById('language-content');
+        if (cont) cont.innerHTML = this.render(lang, d);
+
+        App.showView('language-view');
+    },
+
+    render(lang, d) {
+        const canciones = d.canciones.map(c => `
+            <button onclick="LanguageLab.abrirCancion('${encodeURIComponent(c.q)}')"
+                style="display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:14px 16px; margin-bottom:8px; border:none; border-radius:14px; background:${d.light}; color:${d.color}; font-size:17px; font-weight:700; cursor:pointer;">
+                <span style="font-size:22px;">▶️</span> ${c.t}
+            </button>`).join('');
+
+        const grupos = d.grupos.map(g => `
+            <h3 style="margin:18px 0 10px; font-size:18px; color:${d.color};">${g.nombre}</h3>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px,1fr)); gap:10px;">
+                ${g.items.map(it => `
+                    <button onclick="LanguageLab.say('${it[0]}','${d.ttsLang}',this)"
+                        style="display:flex; flex-direction:column; align-items:center; gap:4px; padding:14px 8px; border:2px solid ${d.light}; border-radius:16px; background:white; cursor:pointer; transition:transform .12s ease;">
+                        <span style="font-size:30px;">${it[2]}</span>
+                        <span style="font-size:${lang === 'chino' ? '28' : '18'}px; font-weight:800; color:#1e293b;">${it[0]}</span>
+                        <span style="font-size:12px; color:#64748b;">${it[1]}</span>
+                        <span style="font-size:13px;">🔊</span>
+                    </button>`).join('')}
+            </div>`).join('');
+
+        return `
+            <p style="font-size:15px; color:#475569; margin-bottom:14px;">${d.intro}</p>
+            <h3 style="margin:6px 0 10px; font-size:18px; color:${d.color};">🎵 Canciones</h3>
+            ${canciones}
+            ${grupos}
+            <p style="font-size:12px; color:#94a3b8; margin-top:18px; text-align:center;">Hecho con cariño para que Agus aprenda jugando 💛</p>`;
+    },
+
+    abrirCancion(q) {
+        window.open('https://www.youtube.com/results?search_query=' + q, '_blank');
+    },
+
+    say(text, lang, el) {
+        try {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = lang;
+            u.rate = lang.indexOf('zh') === 0 ? 0.8 : 0.85;
+            const voices = window.speechSynthesis.getVoices() || [];
+            const base = lang.split('-')[0].toLowerCase();
+            const match = voices.find(v => v.lang && v.lang.toLowerCase().indexOf(base) === 0);
+            if (match) u.voice = match;
+            window.speechSynthesis.speak(u);
+            if (el) { el.style.transform = 'scale(1.08)'; setTimeout(() => { el.style.transform = 'scale(1)'; }, 250); }
+        } catch (e) { console.warn('TTS no disponible', e); }
+    }
+};
+
 // 🎮 ORQUESTRADOR PRINCIPAL Y SPA ROUTER
 const App = {
     currentLesson: null,
@@ -1906,6 +2027,8 @@ const App = {
                 const sub = island.getAttribute('data-subject');
                 if (sub === 'lectura') {
                     ReadingManager.startReadingView();
+                } else if (sub === 'ingles' || sub === 'chino') {
+                    LanguageLab.open(sub);
                 } else {
                     this.startSubjectLessons(sub);
                 }

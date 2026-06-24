@@ -16,7 +16,7 @@ const Fase1API = {
         await this.renderMisiones();
         await this.renderStats();
         await this.renderMiProgreso();
-        try { CalendarSystem.render(); } catch (e) { console.warn('Calendario:', e); }
+        try { CalendarSystem.render(); CalendarSystem.cargarActividad(); } catch (e) { console.warn('Calendario:', e); }
     },
 
     // 🌟 Panel motivador para Eliú: cuánto lleva aprendido + gráfico de cómo va
@@ -257,9 +257,35 @@ const CalendarSystem = {
         '2026-11-01': 'Todos los Santos', '2026-12-08': 'Inmaculada Concepción', '2026-12-25': 'Navidad'
     },
     examen: '2026-10-15',
+    diasActivos: {},
+    rachaActual: 0,
 
     ymd(d) {
         return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    },
+
+    // Trae los días en que Eliú realmente estudió (sesiones + módulos completados + tests)
+    async cargarActividad() {
+        if (typeof supabaseClient === 'undefined') return;
+        try {
+            const { data, error } = await supabaseClient.rpc('dias_actividad', { p_desde: '2026-05-01', p_hasta: this.ymd(new Date()) });
+            if (error) throw error;
+            const mapa = {};
+            (data || []).forEach(r => { mapa[r.dia] = Number(r.actividades) || 0; });
+            this.diasActivos = mapa;
+            this.computarRacha();
+            this.render();
+        } catch (e) { console.warn('dias_actividad:', e); }
+    },
+
+    // Racha = días seguidos con actividad terminando hoy (o ayer si hoy aún no estudia)
+    computarRacha() {
+        const hoy = new Date();
+        let cursor = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+        if (!this.diasActivos[this.ymd(cursor)]) cursor.setDate(cursor.getDate() - 1);
+        let streak = 0;
+        while (this.diasActivos[this.ymd(cursor)]) { streak++; cursor.setDate(cursor.getDate() - 1); }
+        this.rachaActual = streak;
     },
 
     render() {
@@ -267,50 +293,65 @@ const CalendarSystem = {
         if (!cont) return;
         const hoy = new Date();
         const hoyStr = this.ymd(hoy);
-        const base = new Date(hoy.getFullYear(), hoy.getMonth() + this.offsetMes, 1);
-        const anio = base.getFullYear();
-        const mes = base.getMonth();
-        const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
-        // primer día de la semana (lunes=0)
-        let primerDia = new Date(anio, mes, 1).getDay(); // 0=domingo
-        primerDia = (primerDia === 0) ? 6 : primerDia - 1;
-        const diasEnMes = new Date(anio, mes+1, 0).getDate();
+        // Datos útiles del mes en curso
+        let activosMes = 0, modulosMes = 0, ultimo = null;
+        Object.keys(this.diasActivos).forEach(k => {
+            const dt = new Date(k + 'T00:00:00');
+            if (dt.getFullYear() === hoy.getFullYear() && dt.getMonth() === hoy.getMonth()) {
+                activosMes++; modulosMes += this.diasActivos[k];
+            }
+            if (!ultimo || k > ultimo) ultimo = k;
+        });
+        const haceDias = ultimo ? Math.round((new Date(hoyStr) - new Date(ultimo)) / 86400000) : null;
+        const diffExam = Math.ceil((new Date(this.examen) - hoy) / 86400000);
+        const estudioHoy = this.diasActivos[hoyStr] > 0;
 
+        // Mini-mapa: últimas 4 semanas, alineado de lunes a domingo
+        let wd = hoy.getDay(); wd = (wd === 0) ? 6 : wd - 1;
+        const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - wd - 21);
         let celdas = '';
-        for (let i=0; i<primerDia; i++) celdas += '<div></div>';
-        for (let d=1; d<=diasEnMes; d++) {
-            const fecha = new Date(anio, mes, d);
-            const fstr = this.ymd(fecha);
+        for (let k = 0; k < 28; k++) {
+            const dt = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() + k);
+            const fstr = this.ymd(dt);
+            const cnt = this.diasActivos[fstr] || 0;
             const esHoy = fstr === hoyStr;
-            const esFeriado = this.feriados[fstr];
-            const esExamen = fstr === this.examen;
-            let bg = 'transparent', color = '#1e293b', borde = 'transparent', extra = '';
-            if (esFeriado) { color = '#dc2626'; }
-            if (esExamen) { bg = '#fde68a'; extra = '🎓'; }
-            if (esHoy) { bg = '#3b82f6'; color = 'white'; borde = '#1d4ed8'; }
-            celdas += `<div title="${esExamen?'EXAMEN MINEDUC':(esFeriado||'')}" style="aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:8px; font-size:13px; font-weight:${esHoy||esExamen?'800':'500'}; background:${bg}; color:${color}; border:2px solid ${borde};">
-                <span>${d}</span>${esExamen?`<span style="font-size:11px;">🎓</span>`:(esFeriado?`<span style="font-size:8px; line-height:1;">●</span>`:'')}</div>`;
+            const futuro = fstr > hoyStr;
+            let bg = '#e9edf2';
+            if (futuro) bg = '#f8fafc';
+            else if (cnt >= 6) bg = '#16a34a';
+            else if (cnt >= 3) bg = '#4ade80';
+            else if (cnt >= 1) bg = '#bbf7d0';
+            const color = (cnt >= 3 && !futuro) ? '#ffffff' : '#94a3b8';
+            const borde = esHoy ? '2px solid #2563eb' : '1px solid rgba(0,0,0,0.05)';
+            const tip = futuro ? '' : (cnt > 0 ? ('Estudió: ' + cnt + ' actividades') : 'No estudió');
+            celdas += `<div title="${tip}" style="aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:6px; font-size:10px; font-weight:700; background:${bg}; color:${color}; border:${borde};">${dt.getDate()}</div>`;
         }
 
-        // días al examen
-        const diffExam = Math.ceil((new Date(this.examen) - hoy) / 86400000);
+        const estadoChip = estudioHoy
+            ? `<span style="background:#dcfce7; color:#166534; font-weight:800; font-size:12px; padding:5px 11px; border-radius:999px;">✅ Hoy estudió</span>`
+            : (haceDias !== null
+                ? `<span style="background:#fef3c7; color:#b45309; font-weight:800; font-size:12px; padding:5px 11px; border-radius:999px;">⚠️ ${haceDias} ${haceDias === 1 ? 'día' : 'días'} sin estudiar</span>`
+                : '');
 
         cont.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <button onclick="CalendarSystem.offsetMes--; CalendarSystem.render();" style="border:none; background:#eff6ff; color:#2563eb; font-size:18px; width:32px; height:32px; border-radius:8px; cursor:pointer;">‹</button>
-                <strong style="font-size:16px; color:#1e293b;">📅 ${meses[mes]} ${anio}</strong>
-                <button onclick="CalendarSystem.offsetMes++; CalendarSystem.render();" style="border:none; background:#eff6ff; color:#2563eb; font-size:18px; width:32px; height:32px; border-radius:8px; cursor:pointer;">›</button>
+            <strong style="font-size:15px; color:#1e293b; display:block; margin-bottom:10px;">📊 Actividad de Eliú</strong>
+            <div style="display:flex; gap:7px; flex-wrap:wrap; margin-bottom:12px;">
+                <span style="background:#dbeafe; color:#1e40af; font-weight:800; font-size:12px; padding:5px 11px; border-radius:999px;">✅ ${activosMes} días en ${meses[hoy.getMonth()]}</span>
+                <span style="background:#ffedd5; color:#c2410c; font-weight:800; font-size:12px; padding:5px 11px; border-radius:999px;">🔥 Racha ${this.rachaActual}</span>
+                <span style="background:#f3e8ff; color:#7c3aed; font-weight:800; font-size:12px; padding:5px 11px; border-radius:999px;">⏳ Examen en ${diffExam} días</span>
+                ${estadoChip}
             </div>
-            <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:3px; text-align:center; font-size:10px; color:#94a3b8; font-weight:700; margin-bottom:4px;">
+            <div style="font-size:11px; color:#94a3b8; font-weight:700; margin-bottom:5px;">Últimas 4 semanas (verde = estudió)</div>
+            <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px; text-align:center; font-size:9px; color:#cbd5e1; font-weight:700; margin-bottom:3px;">
                 <div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div>
             </div>
-            <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:3px;">${celdas}</div>
-            <div style="display:flex; gap:12px; justify-content:center; margin-top:10px; font-size:11px; color:#64748b; flex-wrap:wrap;">
-                <span><span style="display:inline-block; width:10px; height:10px; background:#3b82f6; border-radius:3px; vertical-align:middle;"></span> Hoy</span>
-                <span><span style="color:#dc2626;">●</span> Feriado</span>
-                <span>🎓 Examen</span>
-                <span style="font-weight:700; color:#7c3aed;">Faltan ${diffExam} días</span>
+            <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px;">${celdas}</div>
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:9px; font-size:10px; color:#94a3b8; flex-wrap:wrap;">
+                <span><span style="display:inline-block; width:9px; height:9px; background:#e9edf2; border-radius:2px; vertical-align:middle;"></span> no estudió</span>
+                <span><span style="display:inline-block; width:9px; height:9px; background:#16a34a; border-radius:2px; vertical-align:middle;"></span> estudió</span>
+                <span><span style="display:inline-block; width:9px; height:9px; border:2px solid #2563eb; border-radius:2px; vertical-align:middle;"></span> hoy</span>
             </div>`;
     }
 };

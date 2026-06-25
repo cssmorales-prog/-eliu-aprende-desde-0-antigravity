@@ -18,6 +18,7 @@ const Fase1API = {
         await this.renderMiProgreso();
         try { CalendarSystem.render(); CalendarSystem.cargarActividad(); } catch (e) { console.warn('Calendario:', e); }
         try { if (typeof ParentDashboard !== 'undefined') ParentDashboard.cargarPaginas(); } catch (e) { console.warn('Páginas:', e); }
+        try { if (typeof EliubotVoz !== 'undefined' && !EliubotVoz.soportado()) { const bv = document.getElementById('btn-voz-eliubot'); if (bv) bv.style.display = 'none'; } } catch (e) {}
     },
 
     // 🌟 Panel motivador para Eliú: cuánto lleva aprendido + gráfico de cómo va
@@ -1684,6 +1685,71 @@ const EliubotChat = {
         if (typeof DashboardMicSystem !== 'undefined' && DashboardMicSystem.processAudio) {
             DashboardMicSystem.processAudio(texto);   // misma llamada a Gemini (Edge Function chat-eliubot)
         }
+    }
+};
+
+// 🎤 HABLAR CON ELIUBOT POR VOZ — un solo toque. Pensado para un niño de 6 que aún no escribe.
+// Escucha, convierte la voz en texto (Web Speech API, funciona en Chrome Android) y envía solo a Gemini.
+const EliubotVoz = {
+    rec: null,
+    escuchando: false,
+    finalText: '',
+
+    soportado() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); },
+
+    toggle() {
+        if (this.escuchando) { this.stop(); return; }
+        const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!Speech) { this._bubble('Para hablar, abre la app en Chrome 😊 Mientras tanto, puedes escribir.'); return; }
+        const r = new Speech();
+        r.lang = 'es-CL';
+        r.continuous = false;
+        r.interimResults = true;
+        r.maxAlternatives = 1;
+        this.rec = r;
+        this.finalText = '';
+        r.onresult = (e) => {
+            let txt = '';
+            for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
+            this.finalText = txt;
+            this._bubble('Te escucho: “' + txt + '”');
+        };
+        r.onerror = (ev) => {
+            this._fin();
+            this._bubble(ev && ev.error === 'not-allowed'
+                ? 'Necesito tu permiso para el micrófono 🎤 Acéptalo y vuelve a tocar.'
+                : 'No te escuché bien, toca y dime otra vez 🎤');
+        };
+        r.onend = () => {
+            this._fin();
+            const t = (this.finalText || '').trim();
+            if (t) this._enviar(t);
+        };
+        try { r.start(); this.escuchando = true; this._ui(true); this._bubble('¡Te escucho! Habla ahora 🎤'); }
+        catch (e) { this._fin(); }
+    },
+
+    stop() { try { if (this.rec) this.rec.stop(); } catch (e) {} },
+
+    _enviar(texto) {
+        this._bubble('Pensando... 🤖');
+        const mascot = document.getElementById('kids-mascot-avatar');
+        if (mascot) mascot.classList.add('talking');
+        if (typeof DashboardMicSystem !== 'undefined' && DashboardMicSystem.processAudio) {
+            DashboardMicSystem.processAudio(texto);   // misma llamada a Gemini + lectura en voz alta
+        }
+    },
+
+    _fin() { this.escuchando = false; this._ui(false); },
+
+    _ui(on) {
+        const b = document.getElementById('btn-voz-eliubot');
+        if (b) { b.innerText = on ? '⏹️ Detener' : '🎤 Hablar con Eliubot'; b.style.background = on ? 'linear-gradient(135deg,#ef4444 0%,#b91c1c 100%)' : 'linear-gradient(135deg,#f59e0b 0%,#d97706 100%)'; }
+    },
+
+    _bubble(msg) {
+        const b = document.getElementById('tito-speech-bubble');
+        if (b) { b.innerText = msg; b.style.display = 'block'; }
     }
 };
 

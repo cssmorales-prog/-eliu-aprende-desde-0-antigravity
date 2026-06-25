@@ -1646,6 +1646,25 @@ function parseGeminiAudioResponse(answer) {
 }
 
 // 🎙️ PORTAL DE MICRÓFONO CONECTADO DIRECTO A GEMINI (DASHBOARD PRINCIPAL)
+// 💬 CHAT DE TEXTO CON ELIUBOT (Gemini). Reemplaza al micrófono: el reconocimiento de voz
+// no es confiable en tablets, así que ahora se escribe y Eliubot responde (y lo lee en voz alta).
+const EliubotChat = {
+    preguntar() {
+        const inp = document.getElementById('eliubot-input');
+        if (!inp) return;
+        const texto = (inp.value || '').trim();
+        if (!texto) { inp.focus(); return; }
+        inp.value = '';
+        const bubble = document.getElementById('tito-speech-bubble');
+        if (bubble) { bubble.innerText = 'Pensando... 🤖'; bubble.style.display = 'block'; }
+        const mascot = document.getElementById('kids-mascot-avatar');
+        if (mascot) mascot.classList.add('talking');
+        if (typeof DashboardMicSystem !== 'undefined' && DashboardMicSystem.processAudio) {
+            DashboardMicSystem.processAudio(texto);   // misma llamada a Gemini (Edge Function chat-eliubot)
+        }
+    }
+};
+
 const DashboardMicSystem = {
     isRecording: false,
     chatHistory: [],
@@ -1776,7 +1795,7 @@ const VideoCallSystem = {
         
         // Configurar burbuja de Eliubot
         const bubble = document.getElementById('tito-speech-bubble');
-        const reinforcementText = `¡Súper Eliu! Qué gran trabajo en tu misión de ${activityName}. 🧱🏆 Presiona mi micrófono mágico aquí abajo y cuéntame con tus palabras, ¿qué te gustó más de lo que aprendiste hoy?`;
+        const reinforcementText = `¡Súper Eliu! Qué gran trabajo en tu misión de ${activityName}. 🧱🏆 Escríbeme en el cuadro de arriba y cuéntame, ¿qué te gustó más de lo que aprendiste hoy?`;
         
         if (bubble) {
             bubble.innerText = reinforcementText;
@@ -1804,7 +1823,7 @@ const VideoCallSystem = {
     triggerSandboxCall() {
         App.showView('kids-dashboard-view');
         const bubble = document.getElementById('tito-speech-bubble');
-        const greeting = `¡Hola Eliu! Presiona mi micrófono de colores y pregúntame lo que quieras. ¡Marshall, Chase y yo estamos listos para conversar de valores, sumas o Roblox! 🤖🎙️`;
+        const greeting = `¡Hola Eliu! Escríbeme tu pregunta en el cuadro y te respondo. ¡Marshall, Chase y yo estamos listos para conversar de valores, sumas o Roblox! 🤖💬`;
         
         if (bubble) {
             bubble.innerText = greeting;

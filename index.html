@@ -21,7 +21,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+2:wght@500;700&display=swap">
-    <link rel="stylesheet" href="css/mejoras.css?v=26">
+    <link rel="stylesheet" href="css/mejoras.css?v=27">
 
     <!-- Soporte para App en Pantalla Completa (PWA Mode) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -202,6 +202,10 @@
 
                     <div id="calendario-mes" style="background:white; border-radius:16px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.08); margin-bottom:8px;">
                         <!-- Calendario inyectado por JS -->
+                    </div>
+
+                    <div id="reto-hoy" style="background:white; border-radius:16px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.08); margin-bottom:8px;">
+                        <!-- Reto del día inyectado por JS según las páginas de los libros -->
                     </div>
 
                 <!-- Botones de Navegación de Bitácora y Stickers -->
@@ -1314,11 +1318,11 @@
          CARGA DE SCRIPTS JS (ORDEN CRÍTICO DE DEPENDENCIAS)
          ========================================================================== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-client.js?v=26"></script>
-    <script src="js/curriculum.js?v=26"></script>
-    <script src="js/diary.js?v=26"></script>
-    <script src="js/parent.js?v=26"></script>
-    <script src="js/app.js?v=26"></script>
+    <script src="js/supabase-client.js?v=27"></script>
+    <script src="js/curriculum.js?v=27"></script>
+    <script src="js/diary.js?v=27"></script>
+    <script src="js/parent.js?v=27"></script>
+    <script src="js/app.js?v=27"></script>
 
 </body>
 </html>

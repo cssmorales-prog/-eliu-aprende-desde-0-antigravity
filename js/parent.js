@@ -204,14 +204,36 @@ const ParentDashboard = {
         }
     },
 
+    _paginasCache: null,
+
     getBookPages() {
-        const defaultPages = {
-            supermatematicos: 70,
-            jugandoSonidos: 64,
-            caligrafia: 108
-        };
+        if (this._paginasCache) return this._paginasCache;          // fuente central (Supabase)
+        const defaultPages = { supermatematicos: 74, jugandoSonidos: 71, caligrafia: 114 };
         const saved = localStorage.getItem('eliu_aprende_paginas');
-        return saved ? JSON.parse(saved) : defaultPages;
+        if (saved) { try { return JSON.parse(saved); } catch (e) {} }
+        return defaultPages;
+    },
+
+    // Lee las páginas actuales desde Supabase (app_config). Así actualizar una página es
+    // un solo cambio central que se ve en vivo en todos los dispositivos.
+    async cargarPaginas() {
+        if (typeof supabaseClient === 'undefined') return;
+        try {
+            const { data, error } = await supabaseClient
+                .from('app_config').select('key,value')
+                .in('key', ['libro_mate_pagina', 'libro_sonidos_pagina', 'libro_caligrafia_pagina']);
+            if (error) throw error;
+            const m = {};
+            (data || []).forEach(r => { m[r.key] = parseInt(r.value, 10); });
+            this._paginasCache = {
+                supermatematicos: m['libro_mate_pagina'] || 74,
+                jugandoSonidos: m['libro_sonidos_pagina'] || 71,
+                caligrafia: m['libro_caligrafia_pagina'] || 114
+            };
+            if (typeof Gamification !== 'undefined' && Gamification.renderKidsDashboard) {
+                Gamification.renderKidsDashboard();
+            }
+        } catch (e) { console.warn('cargarPaginas:', e); }
     },
 
     // 📈 ESTADÍSTICAS Y PROGRESO DE EXAMEN

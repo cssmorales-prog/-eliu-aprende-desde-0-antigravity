@@ -17,6 +17,7 @@ const Fase1API = {
         await this.renderStats();
         await this.renderMiProgreso();
         try { CalendarSystem.render(); CalendarSystem.cargarActividad(); } catch (e) { console.warn('Calendario:', e); }
+        try { if (typeof ParentDashboard !== 'undefined') ParentDashboard.cargarPaginas(); } catch (e) { console.warn('Páginas:', e); }
     },
 
     // 🌟 Panel motivador para Eliú: cuánto lleva aprendido + gráfico de cómo va
@@ -1597,6 +1598,27 @@ const Gamification = {
         if (lblLeng) lblLeng.innerText = `Jugando con los Sonidos: Pág. ${bookPages.jugandoSonidos} • Caligrafía: Pág. ${bookPages.caligrafia}`;
         const lblMate = document.getElementById('lbl-matematica-pág') || document.getElementById('lbl-matematica-pag');
         if (lblMate) lblMate.innerText = `Supermatemáticos 1: Pág. ${bookPages.supermatematicos}`;
+
+        // 📖 Reto didáctico de hoy, según las páginas actuales de los libros (desde app_config)
+        const reto = document.getElementById('reto-hoy');
+        if (reto) {
+            reto.innerHTML = `
+                <h3 style="font-size:16px; font-weight:800; margin:0 0 10px; color:#1e293b;">📖 Hoy en tus libros</h3>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;">
+                    <div style="background:#eef2ff; border-radius:14px; padding:12px;">
+                        <div style="font-weight:800; color:#4338ca;">✍️ Caligrafía · pág ${bookPages.caligrafia}</div>
+                        <div style="font-size:12px; color:#475569; margin-top:4px;">Reto: escribe tu nombre con tu mejor letra. ✏️</div>
+                    </div>
+                    <div style="background:#ecfeff; border-radius:14px; padding:12px;">
+                        <div style="font-weight:800; color:#0e7490;">🔢 Supermatemáticos · pág ${bookPages.supermatematicos}</div>
+                        <div style="font-size:12px; color:#475569; margin-top:4px;">Reto: resuelve y cuenta en voz alta. 🔊</div>
+                    </div>
+                    <div style="background:#fff1f2; border-radius:14px; padding:12px;">
+                        <div style="font-weight:800; color:#be123c;">🔤 Sonidos · pág ${bookPages.jugandoSonidos}</div>
+                        <div style="font-size:12px; color:#475569; margin-top:4px;">Reto: di cada sílaba dando palmas. 👏</div>
+                    </div>
+                </div>`;
+        }
     },
 
     // RENDER ÁLBUM DE STICKERS EN NIÑO

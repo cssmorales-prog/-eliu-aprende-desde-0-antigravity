@@ -752,7 +752,7 @@ const VoiceEngine = {
 
         // Cargar velocidad de habla y volumen unificado
         const savedSpeed = localStorage.getItem('eliu_aprende_velocidad_voz');
-        const rate = savedSpeed ? parseFloat(savedSpeed) : 0.75;
+        const rate = savedSpeed ? parseFloat(savedSpeed) : 1.0;   // Normal (1.00x) por defecto
         
         const savedVol = localStorage.getItem('eliu_aprende_volumen_voz');
         const volume = savedVol !== null ? parseFloat(savedVol) : 1.0;
@@ -861,8 +861,9 @@ const VoiceEngine = {
         }
 
         if (!selectedVoice) {
-            // Priorizar la voz de Google en español ("la voz de Gemini") por sobre todo
-            selectedVoice = voices.find(v => v.lang.startsWith('es') && v.name.includes('Google')) ||
+            // Priorizar la voz de Google español de EE.UU. (es-US) que eligió Casandra, luego cualquier Google español
+            selectedVoice = voices.find(v => v.lang === 'es-US' && v.name.includes('Google')) ||
+                            voices.find(v => v.lang.startsWith('es') && v.name.includes('Google')) ||
                             voices.find(v => v.lang.startsWith('es') && v.name.includes('Natural')) ||
                             voices.find(v => v.lang === 'es-CL' && v.name.includes('Sabina')) ||
                             voices.find(v => v.lang.startsWith('es') && (v.name.includes('Sabina') || v.name.includes('Daria') || v.name.includes('Helena') || v.name.includes('Zira') || v.name.includes('Microsoft Sabina') || v.name.includes('Microsoft Helena') || v.name.includes('Microsoft Daria') || v.name.includes('Microsoft Laura'))) ||

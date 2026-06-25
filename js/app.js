@@ -44,27 +44,63 @@ const Fase1API = {
             else if (consolidados < 27) animo = '¡Eres una súper estrella! Casi todos los temas dominados 🏆';
             else animo = '¡INCREÍBLE! ¡Dominaste TODOS los temas! 🎉👑';
 
-            // Gráfico de evolución (reutiliza el del panel de padres si está disponible)
-            let grafico = '';
-            if (typeof ParentDashboard !== 'undefined' && ParentDashboard.construirGraficoEvolucion) {
-                try { grafico = await ParentDashboard.construirGraficoEvolucion(); } catch (e) { grafico = ''; }
-            }
+            const restantes = Math.max(0, total - consolidados);
+            const pctCamino = Math.round((consolidados / total) * 100);
 
-            const pct = Math.round((consolidados / total) * 100);
+            // Medallas: una cada 5 temas dominados
+            const medallas = Math.floor(consolidados / 5);
+            const faltanMedalla = 5 - (consolidados % 5);
+
+            // Porras de Eliubot que cambian en cada visita (dinámico)
+            const cheers = [
+                '¡Tú puedes con todo, Eliú! 💪',
+                '¡Cada misión te hace más campeón! 🏆',
+                '¡Me encanta aprender contigo! 🤖💙',
+                '¡Eres rapidísimo aprendiendo! ⚡',
+                '¡Vamos por el tesoro juntos! 🗺️',
+                '¡Qué orgulloso estoy de ti! 🌟',
+                '¡Sigue así, pequeño crack! 🚀'
+            ];
+            const cheer = cheers[Math.floor(Math.random() * cheers.length)];
+            const posEliubot = Math.max(2, Math.min(92, pctCamino));
+
             cont.innerHTML = `
-                <p style="font-size:14px; color:#475569; margin-bottom:10px;">${animo}</p>
-                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
-                    <div style="flex:1; min-width:120px; background:#f5f3ff; border-radius:12px; padding:12px; text-align:center;">
-                        <div style="font-size:30px; font-weight:800; color:#7c3aed;">${consolidados}<span style="font-size:16px; color:#a78bfa;">/${total}</span></div>
-                        <div style="font-size:12px; color:#7c3aed;">temas dominados</div>
+                <p style="font-size:15px; color:#475569; margin-bottom:12px; font-weight:600;">${animo}</p>
+
+                <!-- Camino al trofeo -->
+                <div style="font-size:12px; color:#7c3aed; font-weight:800; margin-bottom:4px;">🗺️ Tu camino al trofeo</div>
+                <div style="position:relative; background:#ede9fe; border-radius:999px; height:34px; margin-bottom:6px; overflow:hidden;">
+                    <div style="position:absolute; left:0; top:0; bottom:0; width:${pctCamino}%; background:linear-gradient(90deg,#a78bfa,#7c3aed); border-radius:999px; transition:width .8s ease;"></div>
+                    <div style="position:absolute; left:calc(${posEliubot}% - 12px); top:50%; transform:translateY(-50%); font-size:24px;">🤖</div>
+                    <div style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:22px;">🏆</div>
+                </div>
+                <div style="text-align:center; font-size:13px; color:#7c3aed; font-weight:800; margin-bottom:14px;">¡Llevas ${pctCamino}% del camino!</div>
+
+                <!-- Chips motivadores -->
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+                    <div style="flex:1; min-width:130px; background:#f5f3ff; border-radius:14px; padding:12px; text-align:center;">
+                        <div style="font-size:28px; font-weight:800; color:#7c3aed;">${consolidados} 🌟</div>
+                        <div style="font-size:12px; color:#7c3aed; font-weight:700;">temas dominados</div>
                     </div>
-                    <div style="flex:1; min-width:120px; background:#eff6ff; border-radius:12px; padding:12px; text-align:center;">
-                        <div style="font-size:30px; font-weight:800; color:#2563eb;">${pct}%</div>
-                        <div style="font-size:12px; color:#2563eb;">del examen listo</div>
+                    <div style="flex:1; min-width:130px; background:#ecfdf5; border-radius:14px; padding:12px; text-align:center;">
+                        <div style="font-size:${restantes > 0 ? '28' : '22'}px; font-weight:800; color:#059669;">${restantes > 0 ? ('faltan ' + restantes) : '¡CAMPEÓN! 👑'}</div>
+                        <div style="font-size:12px; color:#059669; font-weight:700;">${restantes > 0 ? 'para ser campeón 🏆' : 'dominaste todo'}</div>
                     </div>
                 </div>
-                <div style="font-size:24px; text-align:center; margin-bottom:6px; letter-spacing:2px;">${estrellas}</div>
-                ${grafico}`;
+
+                <div style="font-size:26px; text-align:center; margin-bottom:10px; letter-spacing:1px;">${estrellas}</div>
+
+                <!-- Próxima medalla -->
+                <div style="background:#fffbeb; border:2px solid #fde68a; border-radius:14px; padding:10px; text-align:center; margin-bottom:10px;">
+                    <div style="font-size:14px; color:#b45309; font-weight:800;">${restantes > 0 ? `🏅 ¡Domina ${faltanMedalla} tema${faltanMedalla > 1 ? 's' : ''} más y ganas otra medalla!` : '🏅 ¡Ganaste todas las medallas!'}</div>
+                    ${medallas > 0 ? `<div style="font-size:22px; margin-top:4px;">${'🏅'.repeat(Math.min(medallas, 7))}</div>` : ''}
+                </div>
+
+                <!-- Porra dinámica de Eliubot -->
+                <div style="display:flex; align-items:center; gap:10px; background:#eef2ff; border-radius:14px; padding:11px;">
+                    <span style="font-size:26px;">🤖</span>
+                    <span style="font-size:14px; color:#4338ca; font-weight:700;">${cheer}</span>
+                </div>`;
         } catch (e) {
             console.warn('renderMiProgreso:', e);
             cont.innerHTML = '';

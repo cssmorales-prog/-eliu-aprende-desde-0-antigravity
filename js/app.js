@@ -329,6 +329,8 @@ const CalendarSystem = {
     render() {
         const cont = document.getElementById('calendario-mes');
         if (!cont) return;
+        // Auto-carga la actividad la primera vez que se dibuja (robusto ante el orden de init)
+        if (!this._cargado && typeof supabaseClient !== 'undefined') { this._cargado = true; this.cargarActividad(); }
         const hoy = new Date();
         const hoyStr = this.ymd(hoy);
         const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];

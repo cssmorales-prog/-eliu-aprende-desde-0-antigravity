@@ -408,7 +408,7 @@ const SimulacroSystem = {
 
     // Test de examen completo (20 preguntas, 90 min)
     async iniciar() {
-        await this._cargar('generar_simulacro', { p_limit: 20 }, 'simulacro', 90 * 60, '📝 SIMULACRO MINEDUC');
+        await this._cargar('generar_simulacro', { p_limit: 20, p_user: USER_ID }, 'simulacro', 90 * 60, '📝 SIMULACRO MINEDUC');
     },
 
     // Test por asignatura (8 preguntas, sin cuenta regresiva) para identificar qué repasar

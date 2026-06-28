@@ -845,7 +845,7 @@ const ParentDashboard = {
             '<th style="padding: 8px;">Fecha</th><th style="padding: 8px;">Hora</th><th style="padding: 8px;">OA</th><th style="padding: 8px;">Duración</th><th style="padding: 8px;">% Score</th>' +
             '</tr></thead><tbody>';
         data.forEach(s => {
-            const eval = s.evaluaciones?.[0];
+            const eval = s.evaluaciones && s.evaluaciones[0];
             const pct = eval ? `${eval.correctas}/${eval.total} (${eval.porcentaje}%)` : '—';
             const hora = s.hora_inicio ? new Date(s.hora_inicio).toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit'}) : '—';
             html += `<tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 8px;">${s.fecha}</td><td style="padding: 8px;">${hora}</td><td style="padding: 8px; font-weight: bold;">${s.oa_codigo || '—'}</td><td style="padding: 8px;">${s.duracion_minutos || '—'} min</td><td style="padding: 8px;">${pct}</td></tr>`;

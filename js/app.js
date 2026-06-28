@@ -1968,14 +1968,14 @@ const DashboardMicSystem = {
                     body: {
                         mensaje: childTranscript,
                         historial: this.chatHistory ? this.chatHistory.slice(-6) : [],
-                        contexto_oa: App.currentLesson?.oa_codigo || null
+                        contexto_oa: (App.currentLesson && App.currentLesson.oa_codigo) || null
                     }
                 }
             );
             
             if (error) throw error;
             
-            if (data?.text) {
+            if (data && data.text) {
                 if (bubble) {
                     bubble.innerText = data.text;
                     bubble.style.display = 'block';
@@ -3006,7 +3006,7 @@ IMPORTANTE:
                         });
                         if (response.ok) {
                             const data = await response.json();
-                            const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                            const answer = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text);
                             if (answer) return answer;
                         }
                     } catch (e) {
@@ -3190,7 +3190,7 @@ OBLIGATORIO: Pon su transcripción al principio entre corchetes, por ejemplo: "[
                                     });
                                     if (response.ok) {
                                         const data = await response.json();
-                                        const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                                        const answer = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text);
                                         if (answer) return answer;
                                     }
                                 } catch (e) {
@@ -3426,7 +3426,7 @@ const HabitsManager = {
                             });
                             if (response.ok) {
                                 const data = await response.json();
-                                const txt = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                                const txt = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text);
                                 if (txt) return txt.trim();
                             }
                         } catch (e) {
@@ -3537,7 +3537,7 @@ OBLIGATORIO: Pon su transcripción al principio entre corchetes, por ejemplo: "[
                                         });
                                         if (response.ok) {
                                             const data = await response.json();
-                                            const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                                            const answer = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text);
                                             if (answer) return answer;
                                         }
                                     } catch (e) {

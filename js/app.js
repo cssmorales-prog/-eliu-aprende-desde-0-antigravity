@@ -1110,6 +1110,102 @@ const ReadingManager = {
                     synonymsExplain: "¡Genial, Eliu! El copihue es una hermosa flor roja endémica de los bosques templados de Chile."
                 }
             ]
+        },
+        {
+            title: "Las alas de Ana",
+            emoji: "🐦☁️",
+            text: "Ana ve un ave en el cielo. El ave tiene dos alas. Con sus alas, el ave vuela muy alto. ¡A Ana le gusta ver volar a las aves!",
+            questions: [
+                {
+                    prompt: "¿Qué tiene el ave para volar?",
+                    options: [
+                        { text: "Patas largas", correct: false },
+                        { text: "Dos alas ¡Correcto!", correct: true },
+                        { text: "Aletas", correct: false }
+                    ],
+                    synonymsExplain: "¡Muy bien, Eliu! Las aves vuelan porque tienen alas. (Leo Primero: ¡Podemos volar!)"
+                }
+            ]
+        },
+        {
+            title: "Un día en el mar",
+            emoji: "🌊🐟",
+            text: "Eliú va al mar con su mamá. En el mar hay olas y peces. Un pez chico nada feliz. Eliú toca el agua y se ríe. ¡El mar es lindo!",
+            questions: [
+                {
+                    prompt: "¿Qué animal nada en el mar?",
+                    options: [
+                        { text: "Un gato", correct: false },
+                        { text: "Un pez ¡Eso es!", correct: true },
+                        { text: "Una vaca", correct: false }
+                    ],
+                    synonymsExplain: "¡Súper, Eliu! El pez vive y nada en el mar. (Leo Primero: ¡Vamos al mar!)"
+                }
+            ]
+        },
+        {
+            title: "La fiesta de colores",
+            emoji: "🎨🌈",
+            text: "Hoy es la fiesta de colores. Sofía pinta una flor roja. Beto pinta un sol amarillo. Todos pintan y se divierten. ¡Qué fiesta tan bonita!",
+            questions: [
+                {
+                    prompt: "¿De qué color pinta Sofía la flor?",
+                    options: [
+                        { text: "Azul", correct: false },
+                        { text: "Roja ¡Correcto!", correct: true },
+                        { text: "Verde", correct: false }
+                    ],
+                    synonymsExplain: "¡Genial, Eliu! Sofía pinta la flor de color rojo. (Leo Primero: Fiesta de colores)"
+                }
+            ]
+        },
+        {
+            title: "Saltan, saltan",
+            emoji: "🐸🐰",
+            text: "El sapo salta en el charco. El conejo salta en el pasto. La rana salta muy alto. ¡Todos saltan y saltan sin parar!",
+            questions: [
+                {
+                    prompt: "¿Cuál de estos animales salta?",
+                    options: [
+                        { text: "El conejo ¡Sí!", correct: true },
+                        { text: "El pez", correct: false },
+                        { text: "El caracol", correct: false }
+                    ],
+                    synonymsExplain: "¡Muy bien, Eliu! El conejo, el sapo y la rana saltan. (Leo Primero: ¿Quiénes saltan?)"
+                }
+            ]
+        },
+        {
+            title: "Mi hogar",
+            emoji: "🏠❤️",
+            text: "Cada familia tiene su hogar. Hay casas de madera y casas de ladrillo. En mi hogar vivo con mi familia. Mi hogar es un lugar para querernos y cuidarnos.",
+            questions: [
+                {
+                    prompt: "¿Para qué nos sirve nuestro hogar?",
+                    options: [
+                        { text: "Para volar", correct: false },
+                        { text: "Para vivir y cuidarnos ¡Correcto!", correct: true },
+                        { text: "Para nadar", correct: false }
+                    ],
+                    synonymsExplain: "¡Hermoso, Eliu! En el hogar vivimos y nos cuidamos con la familia. (Leo Primero: ¡Te muestro mi hogar!)"
+                }
+            ]
+        },
+        {
+            title: "El cóndor de los Andes",
+            emoji: "🦅🏔️",
+            text: "El cóndor es un ave muy grande de Chile. Vive en la cordillera de los Andes. El cóndor abre sus enormes alas y vuela alto. ¡Es el ave más grande que vuela!",
+            questions: [
+                {
+                    prompt: "¿Dónde vive el cóndor?",
+                    options: [
+                        { text: "En el mar", correct: false },
+                        { text: "En la cordillera de los Andes ¡Eso!", correct: true },
+                        { text: "En la ciudad", correct: false }
+                    ],
+                    synonymsExplain: "¡Excelente, Eliu! El cóndor vive en la cordillera de los Andes, en Chile. (Leo Primero: Animales sorprendentes)"
+                }
+            ]
         }
     ],
 

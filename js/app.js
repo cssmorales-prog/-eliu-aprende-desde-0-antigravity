@@ -1829,6 +1829,7 @@ const EliubotVoz = {
     rec: null,
     escuchando: false,
     finalText: '',
+    _watchdog: null,
 
     soportado() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); },
 
@@ -1860,8 +1861,17 @@ const EliubotVoz = {
             const t = (this.finalText || '').trim();
             if (t) this._enviar(t);
         };
-        try { r.start(); this.escuchando = true; this._ui(true); this._bubble('¡Te escucho! Habla ahora 🎤'); }
-        catch (e) { this._fin(); }
+        try {
+            r.start(); this.escuchando = true; this._ui(true); this._bubble('¡Te escucho! Habla ahora 🎤');
+            var self = this;
+            this._watchdog = setTimeout(function () {
+                if (self.escuchando) {
+                    self.stop(); self._fin();
+                    if (!(self.finalText || '').trim()) self._bubble('No te escuché bien 🎤 Toca otra vez y habla fuerte, o escríbeme abajo ✍️');
+                }
+            }, 8000);
+        }
+        catch (e) { this._fin(); this._bubble('No pude usar el micrófono. Escríbeme abajo ✍️'); }
     },
 
     stop() { try { if (this.rec) this.rec.stop(); } catch (e) {} },
@@ -1875,7 +1885,7 @@ const EliubotVoz = {
         }
     },
 
-    _fin() { this.escuchando = false; this._ui(false); },
+    _fin() { this.escuchando = false; this._ui(false); if (this._watchdog) { clearTimeout(this._watchdog); this._watchdog = null; } },
 
     _ui(on) {
         const b = document.getElementById('btn-voz-eliubot');
@@ -1960,21 +1970,28 @@ const DashboardMicSystem = {
     async processAudio(childTranscript) {
         const bubble = document.getElementById('tito-speech-bubble');
         const mascot = document.getElementById('kids-mascot-avatar');
+        const fallar = (msg) => {
+            if (bubble) { bubble.innerText = msg; bubble.style.display = 'block'; }
+            if (mascot) mascot.classList.remove('talking');
+            try { VoiceEngine.speak(msg); } catch (e) {}
+        };
 
         try {
-            const { data, error } = await supabaseClient.functions.invoke(
-                'chat-eliubot', 
-                {
-                    body: {
-                        mensaje: childTranscript,
-                        historial: this.chatHistory ? this.chatHistory.slice(-6) : [],
-                        contexto_oa: (App.currentLesson && App.currentLesson.oa_codigo) || null
-                    }
+            const invokeP = supabaseClient.functions.invoke('chat-eliubot', {
+                body: {
+                    mensaje: childTranscript,
+                    historial: this.chatHistory ? this.chatHistory.slice(-6) : [],
+                    contexto_oa: (App.currentLesson && App.currentLesson.oa_codigo) || null
                 }
-            );
-            
+            });
+            // Timeout: si no responde en 18s, no dejamos el globo pegado en "Pensando..."
+            const timeoutP = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 18000));
+            const res = await Promise.race([invokeP, timeoutP]);
+            const data = res && res.data;
+            const error = res && res.error;
+
             if (error) throw error;
-            
+
             if (data && data.text) {
                 if (bubble) {
                     bubble.innerText = data.text;
@@ -1984,21 +2001,20 @@ const DashboardMicSystem = {
                 VoiceEngine.speak(data.text, () => {
                     if (mascot) mascot.classList.remove('talking');
                 });
-                
+
                 this.chatHistory = this.chatHistory || [];
                 this.chatHistory.push({ role: "user", parts: [{ text: childTranscript }] });
                 this.chatHistory.push({ role: "model", parts: [{ text: data.text }] });
-                
-                // Guardar log en el historial de los padres
+
                 if (typeof ConversationsLogger !== 'undefined') {
                     ConversationsLogger.log("Conversación AI", childTranscript, data.text);
                 }
             } else {
-                VoiceEngine.speak("Eliubot está pensando, intenta otra vez en un momento.");
+                fallar("Eliubot está pensando... intenta otra vez en un momentito 🤖");
             }
         } catch (e) {
             console.error("Error llamando a Eliubot:", e);
-            VoiceEngine.speak("No pude conectarme. Revisa el wifi.");
+            fallar("No pude conectarme. Revisa el wifi y vuelve a intentar 📶");
         }
     }
 };

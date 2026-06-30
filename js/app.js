@@ -2189,7 +2189,16 @@ const LanguageLab = {
             window.speechSynthesis.cancel();
             const voices = window.speechSynthesis.getVoices() || [];
             const base = lang.split('-')[0].toLowerCase();
-            const match = voices.find(v => v.lang && v.lang.toLowerCase().indexOf(base) === 0);
+            let match = voices.find(v => v.lang && v.lang.toLowerCase().indexOf(base) === 0);
+            // El chino en Android puede reportarse como cmn-*, zh_CN, o por nombre ("Chinese"/"Mandarin"/中文)
+            if (!match && base === 'zh') {
+                match = voices.find(v => {
+                    const l = (v.lang || '').toLowerCase().replace('_', '-');
+                    const n = (v.name || '').toLowerCase();
+                    return l.indexOf('zh') === 0 || l.indexOf('cmn') === 0 || l.indexOf('yue') === 0
+                        || n.indexOf('chin') !== -1 || n.indexOf('mandarin') !== -1 || /中文|普通话|国语/.test(v.name || '');
+                });
+            }
             let u;
             if (match) {
                 // El dispositivo tiene voz del idioma (ej: chino instalado): pronuncia el carácter nativo

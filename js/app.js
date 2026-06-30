@@ -2184,42 +2184,26 @@ const LanguageLab = {
 
     say(text, lang, alt, el) {
         try {
+            if (!('speechSynthesis' in window)) return;
             if (el) { el.style.transform = 'scale(1.08)'; setTimeout(() => { el.style.transform = 'scale(1)'; }, 250); }
-            const voices = (window.speechSynthesis && window.speechSynthesis.getVoices()) || [];
+            window.speechSynthesis.cancel();
+            const voices = window.speechSynthesis.getVoices() || [];
             const base = lang.split('-')[0].toLowerCase();
             const match = voices.find(v => v.lang && v.lang.toLowerCase().indexOf(base) === 0);
-
+            let u;
             if (match) {
-                // El dispositivo tiene voz del idioma (ej: chino en el PC): pronuncia el carácter nativo
-                window.speechSynthesis.cancel();
-                const u = new SpeechSynthesisUtterance(text);
+                // El dispositivo tiene voz del idioma (ej: chino instalado): pronuncia el carácter nativo
+                u = new SpeechSynthesisUtterance(text);
                 u.lang = lang; u.voice = match; u.rate = base === 'zh' ? 0.8 : 0.85;
-                window.speechSynthesis.speak(u);
-                return;
+            } else {
+                // No hay voz del idioma: suena el pinyin de inmediato (aproximado, pero audible)
+                let fb = alt || text;
+                if (fb.indexOf('·') !== -1) fb = fb.split('·').pop().trim();
+                u = new SpeechSynthesisUtterance(fb);
+                u.rate = 0.7;
             }
-
-            // No hay voz del idioma (ej: chino en tablet): usar audio NATIVO de Google Translate (suena de verdad)
-            try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
-            const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=' + encodeURIComponent(lang) + '&q=' + encodeURIComponent(text);
-            const audio = new Audio(url);
-            const self = this;
-            audio.onerror = function () { self._fallbackPinyin(alt || text); };
-            const p = audio.play();
-            if (p && p.catch) p.catch(function () { self._fallbackPinyin(alt || text); });
-        } catch (e) { console.warn('TTS no disponible', e); }
-    },
-
-    // Respaldo si no hay voz ni audio de Google: lee el pinyin con la voz por defecto
-    _fallbackPinyin(alt) {
-        try {
-            if (!('speechSynthesis' in window)) return;
-            let fb = alt || '';
-            if (fb.indexOf('·') !== -1) fb = fb.split('·').pop().trim();
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(fb);
-            u.rate = 0.7;
             window.speechSynthesis.speak(u);
-        } catch (e) {}
+        } catch (e) { console.warn('TTS no disponible', e); }
     }
 };
 

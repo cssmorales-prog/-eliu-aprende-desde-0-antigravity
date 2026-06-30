@@ -126,6 +126,7 @@ const Fase1API = {
                 <div style="font-weight: 700; font-size: 18px;">📘 ${item.titulo || item.oa_titulo || item.oa_codigo}</div>
                 <div style="font-size: 12px; color: var(--text-muted);">${item.oa_codigo} · ${item.oa_titulo || ''}</div>
                 <div style="font-size: 14px; color: var(--text-muted);">Páginas ${item.paginas_libro || 'N/A'} · ${item.duracion_estimada || 20} min</div>
+                ${(Fase1API._pendienteMaterial && Fase1API._pendienteMaterial[item.oa_codigo]) ? '<div style="font-size:13px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:6px 10px;">✅ ¡Actividad hecha! Toca 📺 Material de apoyo para terminar la misión.</div>' : ''}
                 <div style="display: flex; gap: 8px; margin-top: 8px;">
                     <button class="btn-activity-submit" onclick="Fase1API.empezarMision('${item.id}', '${item.oa_codigo}')" style="flex: 1; padding: 10px; font-size: 14px; border: none; border-radius: 8px; background: #2ecc71; color: white; font-weight: bold; cursor: pointer;">▶ Empezar misión</button>
                     <button class="btn-canvas" onclick="Fase1API.verMaterial('${item.oa_codigo}')" style="flex: 1; padding: 10px; font-size: 14px; border: none; border-radius: 8px; background: #3498db; color: white; font-weight: bold; cursor: pointer;">📺 Material de apoyo</button>
@@ -245,8 +246,35 @@ const Fase1API = {
 
         App.startSubjectLessons(subject);
     },
-    
+
+    _pendienteMaterial: {},   // oa -> planId: misiones cuya actividad ya se hizo, pero falta ver el Material de apoyo
+
+    materialVisto(oa) {
+        try { return (JSON.parse(localStorage.getItem('eliu_material_visto') || '[]')).indexOf(oa) !== -1; } catch (e) { return false; }
+    },
+    marcarMaterialVisto(oa) {
+        try {
+            const arr = JSON.parse(localStorage.getItem('eliu_material_visto') || '[]');
+            if (arr.indexOf(oa) === -1) { arr.push(oa); localStorage.setItem('eliu_material_visto', JSON.stringify(arr)); }
+        } catch (e) {}
+    },
+    async completarMisionPendiente(oa) {
+        const planId = this._pendienteMaterial[oa];
+        if (!planId || typeof supabaseClient === 'undefined') return;
+        try {
+            await supabaseClient.from('plan_estudio')
+                .update({ estado: 'completado', fecha_completada: new Date().toISOString() })
+                .eq('id', planId);
+        } catch (e) { console.error('completar pendiente:', e); }
+        delete this._pendienteMaterial[oa];
+        try { this.renderMisiones(); this.renderStats(); this.renderMiProgreso(); } catch (e) {}
+    },
+
     async verMaterial(oaCodigo) {
+        // Al abrir el material: marcarlo como visto y, si la actividad ya estaba hecha, terminar la misión ahora
+        this.marcarMaterialVisto(oaCodigo);
+        this.completarMisionPendiente(oaCodigo);
+
         const { data, error } = await supabaseClient
             .from('recursos_complementarios')
             .select('*')
@@ -2651,16 +2679,30 @@ const App = {
             }
         }
 
-        // MARCAR LA MISIÓN DEL DÍA COMO HECHA
+        // MARCAR LA MISIÓN DEL DÍA COMO HECHA (salvo que falte ver el Material de apoyo)
         if (typeof supabaseClient !== 'undefined') {
+            const oaMision = App.currentOACodigo || oaLec;
+            let diferida = false;
+            // Si vino de una tarjeta de misión y aún no se vio el material, dejar la misión en pantalla
+            if (App.currentPlanId && oaMision && !Fase1API.materialVisto(oaMision)) {
+                try {
+                    const { data: mats } = await supabaseClient.from('recursos_complementarios')
+                        .select('id').eq('oa_codigo', oaMision).eq('activo', true).limit(1);
+                    if (mats && mats.length) {
+                        diferida = true;
+                        Fase1API._pendienteMaterial[oaMision] = App.currentPlanId;
+                    }
+                } catch (e) {}
+            }
             try {
-                if (App.currentPlanId) {
-                    // Vino de una tarjeta de misión: marcar ese item exacto
+                if (diferida) {
+                    // No se completa todavía: la tarjeta sigue visible con su botón de Material de apoyo
+                    setTimeout(function () { alert('¡Lo hiciste genial! 🌟 Ahora toca 📺 Material de apoyo para verlo, y así la misión queda lista.'); }, 400);
+                } else if (App.currentPlanId) {
                     await supabaseClient.from('plan_estudio')
                         .update({ estado: 'completado', fecha_completada: new Date().toISOString() })
                         .eq('id', App.currentPlanId);
                 } else {
-                    // Vino de una isla: marcar la misión pendiente del día para esa asignatura
                     await supabaseClient.rpc('completar_mision_dia', { p_user: USER_ID, p_asignatura: subjectKey });
                 }
             } catch (e) { console.error('Error marcando misión:', e); }

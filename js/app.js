@@ -2161,7 +2161,7 @@ const LanguageLab = {
             <h3 style="margin:18px 0 10px; font-size:18px; color:${d.color};">${g.nombre}</h3>
             <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px,1fr)); gap:10px;">
                 ${g.items.map(it => `
-                    <button onclick="LanguageLab.say('${it[0]}','${d.ttsLang}',this)"
+                    <button onclick="LanguageLab.say('${it[0]}','${d.ttsLang}','${it[1]}',this)"
                         style="display:flex; flex-direction:column; align-items:center; gap:4px; padding:14px 8px; border:2px solid ${d.light}; border-radius:16px; background:white; cursor:pointer; transition:transform .12s ease;">
                         <span style="font-size:30px;">${it[2]}</span>
                         <span style="font-size:${lang === 'chino' ? '28' : '18'}px; font-weight:800; color:#1e293b;">${it[0]}</span>
@@ -2182,17 +2182,27 @@ const LanguageLab = {
         window.open('https://www.youtube.com/results?search_query=' + q, '_blank');
     },
 
-    say(text, lang, el) {
+    say(text, lang, alt, el) {
         try {
             if (!('speechSynthesis' in window)) return;
             window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = lang;
-            u.rate = lang.indexOf('zh') === 0 ? 0.8 : 0.85;
             const voices = window.speechSynthesis.getVoices() || [];
             const base = lang.split('-')[0].toLowerCase();
             const match = voices.find(v => v.lang && v.lang.toLowerCase().indexOf(base) === 0);
-            if (match) u.voice = match;
+            let u;
+            if (match) {
+                // Hay voz del idioma (ej: chino en el PC): pronuncia el carácter nativo
+                u = new SpeechSynthesisUtterance(text);
+                u.lang = lang;
+                u.voice = match;
+                u.rate = base === 'zh' ? 0.8 : 0.85;
+            } else {
+                // No hay voz del idioma (ej: chino en tablet sin voz china): suena el pinyin aproximado
+                let fb = alt || text;
+                if (fb.indexOf('·') !== -1) fb = fb.split('·').pop().trim();   // tomar la parte del pinyin
+                u = new SpeechSynthesisUtterance(fb);
+                u.rate = 0.7;   // sin forzar lang: usa la voz por defecto del dispositivo
+            }
             window.speechSynthesis.speak(u);
             if (el) { el.style.transform = 'scale(1.08)'; setTimeout(() => { el.style.transform = 'scale(1)'; }, 250); }
         } catch (e) { console.warn('TTS no disponible', e); }

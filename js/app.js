@@ -2118,7 +2118,11 @@ const LanguageLab = {
                 { t: '🔤 El Abecedario (ABC)', q: 'Super Simple Songs ABC alphabet' },
                 { t: '🔢 Números (Numbers)', q: 'Super Simple Songs numbers count to ten' },
                 { t: '🎨 Colores (Colors)', q: 'Super Simple Songs colors song' },
-                { t: '🐶 Animales (Animals)', q: 'Super Simple Songs animal sounds song' }
+                { t: '🐶 Animales (Animals)', q: 'Super Simple Songs animal sounds song' },
+                { t: '👨‍👩‍👧 Familia (Family)', q: 'Super Simple Songs finger family song' },
+                { t: '🧍 Mi cuerpo (Body)', q: 'Super Simple Songs head shoulders knees and toes' },
+                { t: '🍎 Comida (Food)', q: 'Super Simple Songs do you like food song' },
+                { t: '☀️ El clima (Weather)', q: 'Super Simple Songs how is the weather song' }
             ],
             grupos: [
                 { nombre: '👋 Saludos', items: [
@@ -2130,7 +2134,21 @@ const LanguageLab = {
                 { nombre: '🎨 Colores', items: [
                     ['Red','Rojo','🔴'],['Blue','Azul','🔵'],['Green','Verde','🟢'],['Yellow','Amarillo','🟡'] ] },
                 { nombre: '🐶 Animales', items: [
-                    ['Dog','Perro','🐶'],['Cat','Gato','🐱'],['Bird','Pájaro','🐦'],['Fish','Pez','🐟'] ] }
+                    ['Dog','Perro','🐶'],['Cat','Gato','🐱'],['Bird','Pájaro','🐦'],['Fish','Pez','🐟'],['Cow','Vaca','🐮'],['Horse','Caballo','🐴'] ] },
+                { nombre: '👨‍👩‍👧 Familia', items: [
+                    ['Mom','Mamá','👩'],['Dad','Papá','👨'],['Brother','Hermano','👦'],['Sister','Hermana','👧'],['Grandpa','Abuelo','👴'],['Grandma','Abuela','👵'] ] },
+                { nombre: '🧍 Mi cuerpo', items: [
+                    ['Head','Cabeza','🙂'],['Hand','Mano','✋'],['Foot','Pie','🦶'],['Eye','Ojo','👁️'],['Ear','Oreja','👂'],['Nose','Nariz','👃'] ] },
+                { nombre: '🏫 El colegio', items: [
+                    ['Book','Libro','📖'],['Pencil','Lápiz','✏️'],['Bag','Mochila','🎒'],['Chair','Silla','🪑'],['Teacher','Profesor(a)','👩‍🏫'],['Ruler','Regla','📏'] ] },
+                { nombre: '🍎 Comida', items: [
+                    ['Apple','Manzana','🍎'],['Milk','Leche','🥛'],['Bread','Pan','🍞'],['Water','Agua','💧'],['Banana','Plátano','🍌'],['Egg','Huevo','🥚'] ] },
+                { nombre: '🏠 Mi casa', items: [
+                    ['House','Casa','🏠'],['Door','Puerta','🚪'],['Window','Ventana','🪟'],['Bed','Cama','🛏️'],['Kitchen','Cocina','🍳'],['Table','Mesa','🍽️'] ] },
+                { nombre: '☀️ El clima', items: [
+                    ['Sunny','Soleado','☀️'],['Rainy','Lluvioso','🌧️'],['Windy','Ventoso','🌬️'],['Cloudy','Nublado','☁️'],['Hot','Calor','🥵'],['Cold','Frío','🥶'] ] },
+                { nombre: '🧸 Juguetes', items: [
+                    ['Ball','Pelota','⚽'],['Doll','Muñeca','🪆'],['Car','Auto','🚗'],['Teddy bear','Osito','🧸'],['Kite','Volantín','🪁'],['Blocks','Bloques','🧱'] ] }
             ]
         },
         chino: {

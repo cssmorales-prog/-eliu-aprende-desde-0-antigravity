@@ -8,6 +8,8 @@
 - [ ] **Pedir hora en el Centro de Negocios Sercotec de Antofagasta.** Asesoría gratuita y permanente. Un asesor revisa el proyecto antes de postular
 - [ ] **Descargar la Carpeta Tributaria Electrónica** en sii.cl, opción "para acreditar renta". Con eso se obtiene el número real de ventas netas anuales que va en el formulario
 - [ ] **Verificar en sercotec.cl si hay alguna convocatoria abierta ahora** para Región de Antofagasta. Crece Multisectorial Antofagasta 2026 no pude confirmarla desde aquí
+- [ ] **Preguntarle al contador por el reintegro del impuesto al diésel** (línea 45 del F29). Ver `06-renovacion-camion-y-beneficios-transporte.md`
+- [ ] **Postular a la certificación Giro Limpio 2026** en girolimpio.cl. Es gratis, está abierta, y es argumento comercial frente a clientes nuevos
 
 ## Documentos a reunir
 
@@ -18,7 +20,7 @@
 | e-RUT de la empresa | sii.cl | ☐ |
 | Cédula de identidad del representante legal (ambos lados) | — | ☐ |
 | Certificado de antecedentes laborales y previsionales (F30) | Dirección del Trabajo | ☐ |
-| Declaración jurada de no haber recibido subsidio Sercotec en 24 meses | formato de las bases | ☐ |
+| Declaración jurada de no haber recibido subsidio Sercotec en 24 meses | formato de las bases | ☐ (confirmado: no ha recibido ninguno) |
 | Cotizaciones formales por cada ítem del plan de inversión | proveedores | ☐ |
 | Video de presentación | celular | ☐ |
 
@@ -44,15 +46,11 @@ Basado en el comportamiento de 2026:
 
 Las ventanas son cortas. Crece 2026 estuvo abierto del 2 al 11 de junio. Por eso los prerrequisitos se hacen ahora y no cuando aparezca el aviso.
 
-## Si el objetivo real es renovar el camión
+## Sobre renovar el camión
 
-Crece no sirve para eso: las bases excluyen vehículos que requieren inscripción en el Registro Civil. Las vías son otras:
+Descartado, y no hace falta. El camión es 2020, y el programa "Cambia tu Camión" no tiene edición vigente desde alrededor de 2013. Los programas de renovación activos en 2026 son de transporte público de pasajeros.
 
-- **Programa de renovación de camiones de Sercotec.** Perfil: giro exclusivo de transporte de carga por carretera, ventas bajo 5.000 UF, camión de 25 años o más. Munnay cumple giro y ventas. `[VERIFICAR si hay edición 2026 vigente y qué antigüedad exige]`
-- **CORFO** tiene líneas de financiamiento e inversión que sí admiten vehículos productivos
-- **Leasing bancario**, que no es subsidio pero no compite con la postulación Sercotec
-
-Se puede postular a Crece por un lado y buscar el camión por otro. No son excluyentes, salvo que las bases prohíban tener dos subsidios Sercotec vigentes a la vez.
+Lo que sí hay que revisar es el **reintegro parcial del impuesto específico al diésel**: Munnay cae en el tramo de 80%, el máximo de la escala, y el mecanismo rige hasta el 31 de diciembre de 2026. Está desarrollado en `06-renovacion-camion-y-beneficios-transporte.md`, junto con la certificación Giro Limpio y las garantías CORFO/FOGAPE.
 
 ## Fuentes consultadas
 

@@ -10,7 +10,7 @@
 | **Almacenes de Chile / Digitaliza tu Almacén** | ❌ No | Exclusivo para almacenes de barrio y minimarkets |
 | **Crece / Crece Multisectorial** | ✅ Sí | Este es el que corresponde |
 | **Crece Sostenible** | ✅ Sí, y paga más | Mismo perfil de empresa, pero el proyecto debe incluir medidas de eficiencia energética, hídrica o de reducción de emisiones |
-| **Programa de renovación de camiones** | ⚠️ Depende del camión | Ver más abajo |
+| **Programa de renovación de camiones** | ❌ No | El programa no existe hoy y el camión es 2020. Ver `06-renovacion-camion-y-beneficios-transporte.md` |
 
 ## El fondo objetivo: Crece
 
@@ -22,7 +22,7 @@
 - Persona natural o jurídica con inicio de actividades vigente en primera categoría ante el SII ✅ Munnay cumple
 - Ventas netas anuales entre 200 UF y 25.000 UF ✅ Munnay ≈ 1.128 UF
 - Actividad económica coherente con la focalización de la convocatoria regional ⚠️ hay que revisar si Antofagasta focaliza en rubros específicos
-- No haber recibido subsidio Sercotec en los últimos 24 meses `[VERIFICAR si Munnay recibió algo]`
+- No haber recibido subsidio Sercotec en los últimos 24 meses ✅ confirmado por CAS: Munnay no ha recibido ninguno
 
 **Monto:** hasta **$5.000.000** netos por proyecto.
 - Máximo $1.000.000 en gestión empresarial (capacitación, asistencia técnica, marketing)
@@ -58,12 +58,11 @@ Sercotec demora entre 60 y 90 días en resolver después del cierre. Las convoca
 
 **Sercotec no financia vehículos que requieran inscripción en el Registro Civil.** Camión, tracto, remolque, rampla: todos quedan fuera de Crece.
 
-Si el objetivo es renovar el camión, el camino no es Crece. Es alguna de estas:
+Esto igual no es problema para Munnay, porque **el camión es 2020**. Es flota moderna y no hay nada que renovar.
 
-1. **Programa de renovación de camiones de Sercotec** ("Cambia tu Camión" en ediciones anteriores). Subsidio de ~$6.000.000 para reemplazar un camión de 25 años o más por uno de hasta 10 años, dirigido a empresas con **giro exclusivo** de transporte de carga por carretera y ventas bajo 5.000 UF. Munnay cumple el perfil de ventas y de giro. `[VERIFICAR si hay convocatoria vigente en 2026 — la información pública que encontré es antigua]`
-2. **Leasing bancario o financiamiento CORFO**, que es otra vía y no compite con la postulación Sercotec.
+Tampoco existe un programa estatal al que recurrir para eso. "Cambia tu Camión" fue de la Agencia Chilena de Eficiencia Energética en 2009 y 2011, más una convocatoria de Sercotec alrededor de 2013, y exigía camiones de 25 años o más. No hay edición vigente. Los programas de renovación activos en 2026 (Renueva tu Micro, Renueva tu Colectivo) son de transporte público de pasajeros y no cubren carga.
 
-Mientras tanto, el proyecto Crece se arma sobre lo que sí es financiable. Eso está en `03-plan-de-inversion.md`.
+El detalle completo, junto con los beneficios que sí aplican al transporte de carga, está en `06-renovacion-camion-y-beneficios-transporte.md`.
 
 ## Recurso gratuito y disponible hoy
 

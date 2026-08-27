@@ -10,7 +10,7 @@ Carpeta de trabajo para postular Munnay SpA a un fondo Sercotec.
 
 1. El fondo que te corresponde es **Crece** (o **Crece Sostenible**, que paga más). Capital Semilla queda descartado porque exige NO tener inicio de actividades, y Munnay ya factura.
 2. Las convocatorias Crece 2026 **cerraron en junio y julio**. Lo que hay que hacer ahora es dejar todo listo para la próxima apertura, porque los prerrequisitos toman semanas.
-3. **Sercotec no financia camiones.** Las bases excluyen vehículos que requieren inscripción en el Registro Civil. El proyecto tiene que armarse sobre lo que sí es financiable.
+3. **Sercotec no financia camiones**, pero da lo mismo: el camión es 2020 y no hay nada que renovar. El proyecto se arma sobre capacidad comercial y estándar operacional, que es donde está el cuello de botella real.
 
 ## Archivos
 
@@ -21,6 +21,7 @@ Carpeta de trabajo para postular Munnay SpA a un fondo Sercotec.
 | `03-plan-de-inversion.md` | Plan de inversión armado sobre ítems financiables, con montos |
 | `04-borrador-formulario.md` | Texto borrador para cada pregunta del formulario y guion del video |
 | `05-checklist-y-plazos.md` | Prerrequisitos, documentos y qué hacer esta semana |
+| `06-renovacion-camion-y-beneficios-transporte.md` | Por qué la renovación del camión está descartada, y los beneficios del transporte de carga que sí aplican |
 
 ## Advertencia sobre las fuentes
 

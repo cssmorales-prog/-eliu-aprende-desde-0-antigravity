@@ -5,12 +5,27 @@
 | Fondo | ¿Aplica a Munnay? | Motivo |
 |---|---|---|
 | **Capital Semilla Emprende** | ❌ No | Es para mayores de 18 años **sin** inicio de actividades en primera categoría. Munnay ya factura desde 2024 |
-| **Capital Abeja / Capital Pioneras** | ⚠️ Solo si la titular es mujer | Pioneras apunta a mujeres en rubros masculinizados, y transporte de carga está listado como rubro objetivo. Si la representante legal de Munnay es mujer, esta línea es muy competitiva porque el rubro juega a favor |
+| **Capital Abeja Emprende** | ❌ No | Exige **no** tener inicio de actividades en primera categoría. Munnay ya factura |
+| **Capital Pioneras** | ❌ No | Mismo requisito: **sin** inicio de actividades. Además excluye a quien tenga más del 50% de una sociedad ya existente. CAS es la única representante y dueña de Munnay, así que queda fuera dos veces. Ver más abajo |
 | **Fortalecimiento Gremial** | ❌ No | Es para federaciones, asociaciones gremiales, cámaras y sindicatos. No para una empresa individual |
 | **Almacenes de Chile / Digitaliza tu Almacén** | ❌ No | Exclusivo para almacenes de barrio y minimarkets |
 | **Crece / Crece Multisectorial** | ✅ Sí | Este es el que corresponde |
 | **Crece Sostenible** | ✅ Sí, y paga más | Mismo perfil de empresa, pero el proyecto debe incluir medidas de eficiencia energética, hídrica o de reducción de emisiones |
 | **Programa de renovación de camiones** | ❌ No | El programa no existe hoy y el camión es 2020. Ver `06-renovacion-camion-y-beneficios-transporte.md` |
+
+## Qué cambia que la titular sea mujer
+
+CAS es mujer y **única representante legal** de Munnay SpA.
+
+Eso **no** abre Capital Abeja ni Capital Pioneras. Las dos son líneas de *emprendimiento*: exigen que la postulante **no tenga inicio de actividades en primera categoría**, porque el subsidio incluye la formalización de una empresa nueva. Capital Pioneras además excluye a quien ya tenga participación mayor al 50% en una sociedad. Munnay factura desde 2024 y CAS es su dueña, así que ninguna de las dos aplica. `[VERIFICAR en las bases regionales de Antofagasta]`
+
+Lo que sí cambia, y no es menor:
+
+**En Crece, ser mujer es criterio de desempate.** Las bases establecen que ante empate de puntaje se selecciona a la persona jurídica constituida por al menos el 50% de su capital por socias mujeres y con al menos una representante legal de sexo registral femenino. Munnay cumple las dos condiciones con holgura. En un concurso donde el corte se decide por décimas, esto define adjudicaciones.
+
+**Y el rubro juega a favor en el relato.** El transporte de carga por carretera es uno de los sectores que Sercotec identifica como masculinizados. Que la dueña y representante legal sea mujer, operando un camión en la minería de Antofagasta, es exactamente el perfil que el servicio quiere mostrar. Eso no da puntaje automático, pero sí es material para el formulario y para el video.
+
+**Acción concreta:** hay que dejar acreditado documentalmente que ≥50% del capital es de socias mujeres y que la representante legal es mujer. Eso sale de la escritura de constitución y del certificado de vigencia de la SpA. Si el estatuto no lo deja explícito, conviene resolverlo antes de postular, no durante.
 
 ## El fondo objetivo: Crece
 

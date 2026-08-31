@@ -10,6 +10,7 @@ Base: planilla "Control Facturacion y Cobranza - Agosto 2026 - MUNNAY.xlsx" y "M
 | RUT | 77.960.253-2 |
 | Giro | Transporte de carga por carretera |
 | Forma jurídica | Sociedad por Acciones (persona jurídica) |
+| Representación legal | CAS, **única representante legal**, mujer. Relevante: en Crece opera como criterio de desempate |
 | Inicio de actividades primera categoría | Vigente (emite factura electrónica) |
 | Zona de operación | Región de Antofagasta: Puerto Angamos, Puerto ATI, Mejillones, Antofagasta, Planta Molycop, Planta Magotteaux |
 

@@ -6,11 +6,12 @@ Carpeta de trabajo para postular Munnay SpA a un fondo Sercotec.
 **Empresa:** MUNNAY SpA — RUT 77.960.253-2 — Transporte de carga por carretera
 **Región de operación:** Antofagasta
 
-## Resumen en tres líneas
+## Resumen en cuatro líneas
 
 1. El fondo que te corresponde es **Crece** (o **Crece Sostenible**, que paga más). Capital Semilla queda descartado porque exige NO tener inicio de actividades, y Munnay ya factura.
 2. Las convocatorias Crece 2026 **cerraron en junio y julio**. Lo que hay que hacer ahora es dejar todo listo para la próxima apertura, porque los prerrequisitos toman semanas.
 3. **Sercotec no financia camiones**, pero da lo mismo: el camión es 2020 y no hay nada que renovar. El proyecto se arma sobre capacidad comercial y estándar operacional, que es donde está el cuello de botella real.
+4. Que la representante legal sea mujer **no** abre Capital Abeja ni Capital Pioneras (ambas exigen no tener inicio de actividades), pero **sí** activa el criterio de desempate de Crece a favor de Munnay. Ver `02-que-fondo-conviene.md`.
 
 ## Archivos
 

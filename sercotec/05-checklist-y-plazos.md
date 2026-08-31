@@ -9,6 +9,7 @@
 - [ ] **Descargar la Carpeta Tributaria Electrónica** en sii.cl, opción "para acreditar renta". Con eso se obtiene el número real de ventas netas anuales que va en el formulario
 - [ ] **Verificar en sercotec.cl si hay alguna convocatoria abierta ahora** para Región de Antofagasta. Crece Multisectorial Antofagasta 2026 no pude confirmarla desde aquí
 - [ ] **Preguntarle al contador por el reintegro del impuesto al diésel** (línea 45 del F29). Ver `06-renovacion-camion-y-beneficios-transporte.md`
+- [ ] **Acreditar la composición societaria femenina.** Revisar la escritura de constitución y el certificado de vigencia: deben dejar explícito que ≥50% del capital es de socias mujeres y que la representante legal es mujer. Es el criterio de desempate de Crece y conviene tenerlo resuelto antes de postular, no durante
 - [ ] **Postular a la certificación Giro Limpio 2026** en girolimpio.cl. Es gratis, está abierta, y es argumento comercial frente a clientes nuevos
 
 ## Documentos a reunir
@@ -19,6 +20,7 @@
 | Certificado de vigencia de la SpA | Registro de Empresas y Sociedades (tuempresaenundia.cl) o Conservador | ☐ |
 | e-RUT de la empresa | sii.cl | ☐ |
 | Cédula de identidad del representante legal (ambos lados) | — | ☐ |
+| Escritura de constitución de la SpA (acredita capital femenino ≥50%) | Registro de Empresas y Sociedades o Conservador | ☐ |
 | Certificado de antecedentes laborales y previsionales (F30) | Dirección del Trabajo | ☐ |
 | Declaración jurada de no haber recibido subsidio Sercotec en 24 meses | formato de las bases | ☐ (confirmado: no ha recibido ninguno) |
 | Cotizaciones formales por cada ítem del plan de inversión | proveedores | ☐ |

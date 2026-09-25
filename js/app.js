@@ -114,7 +114,14 @@ const Fase1API = {
             .eq('user_id', USER_ID);
             
         if (error || !cola) return;
-        
+
+        // Contexto de estudio para Eliubot: misiones del dia + refuerzos del examen.
+        // Lo consumen los prompts de Gemini para que el tutor reme en la misma direccion que el plan.
+        const temasHoy = cola.slice(0, 5).map(i => (i.titulo || i.oa_titulo || i.oa_codigo)).join('; ');
+        App.contextoEstudioHoy = 'CONTEXTO DE HOY (usalo si viene al caso): Eliu prepara su examen libre de 1° Basico del 15 de octubre de 2026. ' +
+            (temasHoy ? 'Sus misiones de hoy son: ' + temasHoy + '. ' : '') +
+            'Refuerzos pendientes: responder SIEMPRE con frases completas sin dejar nada en blanco, leer numeros escritos en palabras (dieciocho = 18, trece = 13), y en los problemas escribir primero la operacion. Si puedes, conecta tu respuesta con estos temas y felicitalo por prepararse.';
+
         const container = document.getElementById('misiones-lista');
         if (!container) return;
         
@@ -3068,7 +3075,8 @@ IMPORTANTE:
 3. Habla con mucho cariño y anímalo a superarse siempre. Dile que es muy inteligente y especial.
 4. Explícale el concepto escolar de forma tildada y simple (sílabas, sumas, los 5 sentidos, caligrafía o geografía de Chile), usando analogías divertidas como bloques o Paw Patrol.
 5. ENSEÑANZA DE VALORES Y VIRTUDES (CRÍTICO): Siempre que sea oportuno, enséñale a decir siempre la verdad, a ser bondadoso con todos, a no mentir ni engañar bajo ninguna circunstancia, y a ser una persona buena, empática y de noble corazón, citando a Chase y Marshall de Paw Patrol.
-6. OBLIGATORIO: Transcribe exactamente la duda del niño en el audio y ponlo al principio de tu respuesta entre corchetes, por ejemplo: "[Transcripción: qué son las sumas]". Luego de cerrar el corchete, escribe la respuesta cariñosa de Eliubot.`;
+6. OBLIGATORIO: Transcribe exactamente la duda del niño en el audio y ponlo al principio de tu respuesta entre corchetes, por ejemplo: "[Transcripción: qué son las sumas]". Luego de cerrar el corchete, escribe la respuesta cariñosa de Eliubot.
+7. ${App.contextoEstudioHoy || ''}`;
 
             const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
             const fetchResponse = async () => {
@@ -3259,7 +3267,8 @@ Transcribe su audio exactamente.
 Si Eliu responde con sinceridad o explica lo que pensó, elógialo muchísimo por su honestidad y esfuerzo (decir la verdad, no mentir y esforzarse son valores hermosos, Chase y Marshall están súper orgullosos de su noble corazón).
 Luego, dale una pista didáctica muy tierna, dulce y de apoyo basada en esta pista oficial: "${hint.replace("💡 ", "")}".
 Anímalo a reintentarlo y dile que equivocarse es parte del aprendizaje y que jugando con bloques construimos sabiduría.
-OBLIGATORIO: Pon su transcripción al principio entre corchetes, por ejemplo: "[Transcripción: elegí el tres porque conté mal]". Luego escribe tu respuesta amorosa.`;
+OBLIGATORIO: Pon su transcripción al principio entre corchetes, por ejemplo: "[Transcripción: elegí el tres porque conté mal]". Luego escribe tu respuesta amorosa.
+${App.contextoEstudioHoy || ''}`;
 
                         const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
                         const fetchResponse = async () => {

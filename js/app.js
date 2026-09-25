@@ -265,6 +265,37 @@ const Fase1API = {
             if (arr.indexOf(oa) === -1) { arr.push(oa); localStorage.setItem('eliu_material_visto', JSON.stringify(arr)); }
         } catch (e) {}
     },
+    fechaCorta(ts) {
+        try { const d = new Date(ts); return d.getDate() + '-' + (d.getMonth() + 1); } catch (e) { return ''; }
+    },
+
+    // Registra el clic REAL en un link de material (evidencia en Supabase) y recien ahi
+    // marca el material como visto y cierra la mision pendiente. El link abre igual (target _blank).
+    async abrirRecurso(recursoId, oaCodigo) {
+        try {
+            const res = await supabaseClient.from('recursos_vistos')
+                .select('id, veces').eq('user_id', USER_ID).eq('recurso_id', recursoId).limit(1);
+            const fila = (res.data && res.data[0]) || null;
+            if (fila) {
+                await supabaseClient.from('recursos_vistos')
+                    .update({ ultima_vez: new Date().toISOString(), veces: (fila.veces || 1) + 1 })
+                    .eq('id', fila.id);
+            } else {
+                await supabaseClient.from('recursos_vistos')
+                    .insert({ user_id: USER_ID, recurso_id: recursoId, oa_codigo: oaCodigo });
+            }
+        } catch (e) { console.error('registrar recurso visto:', e); }
+
+        this.marcarMaterialVisto(oaCodigo);
+        this.completarMisionPendiente(oaCodigo);
+
+        const el = document.getElementById('rec-' + recursoId);
+        if (el) {
+            const marca = el.querySelector('span');
+            if (marca) { marca.style.color = '#16a34a'; marca.style.fontWeight = '700'; marca.innerText = ' ✔ visto recién'; }
+        }
+    },
+
     async completarMisionPendiente(oa) {
         const planId = this._pendienteMaterial[oa];
         if (!planId || typeof supabaseClient === 'undefined') return;
@@ -278,25 +309,39 @@ const Fase1API = {
     },
 
     async verMaterial(oaCodigo) {
-        // Al abrir el material: marcarlo como visto y, si la actividad ya estaba hecha, terminar la misión ahora
-        this.marcarMaterialVisto(oaCodigo);
-        this.completarMisionPendiente(oaCodigo);
-
+        // El material ya NO se marca al abrir el popup: solo cuando Eliu abre un link real (ver abrirRecurso).
         const { data, error } = await supabaseClient
             .from('recursos_complementarios')
             .select('*')
             .eq('oa_codigo', oaCodigo)
             .eq('activo', true)
             .order('prioridad', { ascending: false });
-            
+
         if (error || !data || data.length === 0) {
             alert('No hay material de apoyo para este OA.');
             return;
         }
-        
-        let html = '<div style="padding: 20px; text-align: left;"><h2 style="margin-bottom: 16px;">Material de Apoyo</h2>';
+
+        // Clics reales registrados en Supabase: evidencia para que el apoderado corrobore
+        const vistos = {};
+        try {
+            const res = await supabaseClient.from('recursos_vistos')
+                .select('recurso_id, ultima_vez, veces')
+                .eq('user_id', USER_ID)
+                .in('recurso_id', data.map(r => r.id));
+            (res.data || []).forEach(v => { vistos[v.recurso_id] = v; });
+        } catch (e) {}
+
+        let html = '<div style="padding: 20px; text-align: left;"><h2 style="margin-bottom: 6px;">Material de Apoyo</h2>' +
+            '<p style="font-size:12px; color:#666; margin:0 0 12px;">Toca un link para verlo. ✔ = ya lo vio (queda registrado con fecha).</p>';
         data.forEach(rec => {
-            html += `<a href="${rec.url}" target="_blank" style="display: block; margin-bottom: 8px; color: var(--color-matematica); font-weight: 600;">${rec.tipo === 'video' ? '📺' : '🎮'} ${rec.titulo}</a>`;
+            const v = vistos[rec.id];
+            const marca = v
+                ? '<span style="color:#16a34a; font-size:12px; font-weight:700;"> ✔ visto el ' + Fase1API.fechaCorta(v.ultima_vez) + (v.veces > 1 ? ' (' + v.veces + ' veces)' : '') + '</span>'
+                : '<span style="color:#b45309; font-size:12px;"> — aún sin ver</span>';
+            html += '<div id="rec-' + rec.id + '" style="margin-bottom: 10px;">' +
+                '<a href="' + rec.url + '" target="_blank" onclick="Fase1API.abrirRecurso(\'' + rec.id + '\', \'' + oaCodigo + '\')" style="color: var(--color-matematica); font-weight: 600;">' +
+                (rec.tipo === 'video' ? '📺' : '🎮') + ' ' + rec.titulo + '</a>' + marca + '</div>';
         });
         html += '<button class="btn-canvas" onclick="document.getElementById(\'material-popup\').remove()" style="margin-top: 16px;">Cerrar</button></div>';
         

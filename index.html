@@ -21,7 +21,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+2:wght@500;700&display=swap">
-    <link rel="stylesheet" href="css/mejoras.css?v=43">
+    <link rel="stylesheet" href="css/mejoras.css?v=44">
 
     <!-- Soporte para App en Pantalla Completa (PWA Mode) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -222,6 +222,9 @@
                     </button>
                     <button class="btn-back-kids" id="btn-to-cofre" style="flex: 1; background: linear-gradient(135deg, #00f0ff 0%, #0077b6 100%); box-shadow: 0 4px 10px rgba(0, 240, 255, 0.3);">
                         🎁 Cofre de Recuerdos Mágicos
+                    </button>
+                    <button class="btn-back-kids" onclick="MapaSur.abrir()" style="flex: 1; background: linear-gradient(135deg, #2a9d8f 0%, #1b4965 100%); box-shadow: 0 4px 10px rgba(42, 157, 143, 0.3);">
+                        🗺️ Mapa: ¿Dónde vivo yo?
                     </button>
                 </div>
 
@@ -1015,6 +1018,119 @@
         -->
 
         <!-- ==========================================================================
+             PANTALLA: MAPA DE AMERICA DEL SUR (aprender y pintar) — Historia OA9
+             ========================================================================== -->
+        <section class="view-section" id="mapa-view">
+            <div class="card" style="padding: 16px; max-width: 680px; margin: 0 auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h2 style="font-size:21px; font-weight:800;">🗺️ América del Sur</h2>
+                    <button class="btn-canvas" onclick="App.showView('kids-dashboard-view')">Volver</button>
+                </div>
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <button id="mapa-tab-aprender" class="btn-activity-submit" style="flex:1; padding:10px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; background:#2a9d8f; color:#fff;" onclick="MapaSur.modo('aprender')">📖 Aprender</button>
+                    <button id="mapa-tab-pintar" class="btn-canvas" style="flex:1; padding:10px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; background:#e0e0e0;" onclick="MapaSur.modo('pintar')">🎨 Píntalo tú</button>
+                </div>
+
+                <!-- MODO APRENDER -->
+                <div id="mapa-aprender">
+                    <p style="font-size:14px; margin-bottom:8px;">Vivimos en <b>Antofagasta</b> 🏠, en el norte de <b>Chile</b> (rojo). Nuestros vecinos: <b>Perú</b> (verde), <b>Bolivia</b> (amarillo) y <b>Argentina</b> (celeste). El mar de Chile es el <b>océano Pacífico</b>; el del otro lado es el <b>Atlántico</b>. La capital es <b>Santiago</b> ⭐ y el país más grande del continente es <b>Brasil</b>.</p>
+                    <svg viewBox="0 0 700 870" style="width:100%; max-width:540px; display:block; margin:0 auto;">
+                        <rect x="0" y="0" width="700" height="870" fill="#3a86cf" rx="14"/>
+                        <text x="38" y="430" font-size="23" fill="#fff" font-weight="bold">OCÉANO</text>
+                        <text x="34" y="458" font-size="23" fill="#fff" font-weight="bold">PACÍFICO</text>
+                        <text x="120" y="600" font-size="26">🐟</text>
+                        <text x="70" y="690" font-size="28">⛵</text>
+                        <text x="545" y="640" font-size="23" fill="#fff" font-weight="bold">OCÉANO</text>
+                        <text x="538" y="668" font-size="23" fill="#fff" font-weight="bold">ATLÁNTICO</text>
+                        <text x="600" y="420" font-size="26">🐳</text>
+                        <path d="M150,95 L250,55 L340,65 L430,95 L540,160 L640,270 L600,380 L545,450 L495,535 L455,660 L420,780 L370,835 L340,820 L310,700 L285,550 L270,430 L215,290 L165,195 Z" fill="#e8d8b8" stroke="#6b4e2e" stroke-width="3"/>
+                        <path d="M195,245 L215,290 L270,430 L305,435 L330,360 L285,265 Z" fill="#74c69d" stroke="#1b5e3b" stroke-width="2.5"/>
+                        <path d="M305,435 L330,360 L420,345 L455,430 L430,468 L322,458 Z" fill="#ffd166" stroke="#8a6d3b" stroke-width="2.5"/>
+                        <path d="M322,458 L430,468 L442,545 L455,660 L420,780 L370,835 L370,815 L345,700 L320,560 Z" fill="#90d8f7" stroke="#1b4965" stroke-width="2.5"/>
+                        <path d="M270,430 L305,435 L322,458 L320,560 L345,700 L370,815 L370,835 L340,820 L310,700 L285,550 Z" fill="#e63946" stroke="#7a0c14" stroke-width="2.5"/>
+                        <g fill="#ffffff" stroke="#7a5c3e" stroke-width="2">
+                            <path d="M315,505 l10,-17 l10,17 z"/><path d="M322,590 l10,-17 l10,17 z"/><path d="M334,670 l10,-17 l10,17 z"/><path d="M348,750 l10,-17 l10,17 z"/>
+                        </g>
+                        <text x="455" y="290" font-size="26" font-weight="bold" fill="#6b4e2e">BRASIL</text>
+                        <text x="195" y="150" font-size="15" font-weight="bold" fill="#6b4e2e">COLOMBIA</text>
+                        <text x="320" y="115" font-size="15" font-weight="bold" fill="#6b4e2e">VENEZUELA</text>
+                        <text x="168" y="228" font-size="12" font-weight="bold" fill="#6b4e2e">ECUADOR</text>
+                        <text x="205" y="360" font-size="17" font-weight="bold" fill="#0a3d23">PERÚ</text>
+                        <text x="340" y="415" font-size="16" font-weight="bold" fill="#6b4e00">BOLIVIA</text>
+                        <text x="372" y="600" font-size="17" font-weight="bold" fill="#0b3954">ARGENTINA</text>
+                        <text x="447" y="520" font-size="11" font-weight="bold" fill="#6b4e2e">PARAGUAY</text>
+                        <text x="458" y="565" font-size="11" font-weight="bold" fill="#6b4e2e">URUGUAY</text>
+                        <text transform="rotate(75 302 500)" x="302" y="500" font-size="21" font-weight="bold" fill="#ffffff">CHILE</text>
+                        <text x="248" y="500" font-size="23">🏠</text>
+                        <text x="95" y="520" font-size="15" font-weight="bold" fill="#fff">¡Aquí vivo yo!</text>
+                        <text x="102" y="540" font-size="14" fill="#fff">Antofagasta</text>
+                        <line x1="200" y1="515" x2="248" y2="498" stroke="#fff" stroke-width="2.5"/>
+                        <circle cx="332" cy="655" r="6" fill="#ffd700" stroke="#7a0c14" stroke-width="2"/>
+                        <text x="170" y="648" font-size="14" font-weight="bold" fill="#fff">Santiago ⭐</text>
+                        <text x="170" y="666" font-size="13" fill="#fff">(la capital)</text>
+                        <line x1="265" y1="655" x2="324" y2="655" stroke="#fff" stroke-width="2.5"/>
+                    </svg>
+                    <div style="margin-top:12px;">
+                        <h3 style="font-size:16px; font-weight:800; margin-bottom:6px;">🧠 ¡Demuestra lo que aprendiste!</h3>
+                        <div class="mapa-quiz" data-q="1" style="margin-bottom:10px;">
+                            <p style="font-weight:700; font-size:15px;">¿Cómo se llama el océano que está al lado de Chile?</p>
+                            <div style="display:flex; gap:8px; margin-top:6px; flex-wrap:wrap;">
+                                <button class="btn-canvas mapa-op" onclick="MapaSur.responder(this, false)">Atlántico</button>
+                                <button class="btn-canvas mapa-op" onclick="MapaSur.responder(this, true)">Pacífico</button>
+                            </div>
+                        </div>
+                        <div class="mapa-quiz" data-q="2" style="margin-bottom:10px;">
+                            <p style="font-weight:700; font-size:15px;">¿Cuáles son los TRES países vecinos de Chile?</p>
+                            <div style="display:flex; gap:8px; margin-top:6px; flex-wrap:wrap;">
+                                <button class="btn-canvas mapa-op" onclick="MapaSur.responder(this, true)">Perú, Bolivia y Argentina</button>
+                                <button class="btn-canvas mapa-op" onclick="MapaSur.responder(this, false)">Brasil, México y España</button>
+                            </div>
+                        </div>
+                        <div class="mapa-quiz" data-q="3" style="margin-bottom:10px;">
+                            <p style="font-weight:700; font-size:15px;">¿Cuál es la capital de Chile?</p>
+                            <div style="display:flex; gap:8px; margin-top:6px; flex-wrap:wrap;">
+                                <button class="btn-canvas mapa-op" onclick="MapaSur.responder(this, false)">Antofagasta</button>
+                                <button class="btn-canvas mapa-op" onclick="MapaSur.responder(this, true)">Santiago</button>
+                            </div>
+                        </div>
+                        <div id="mapa-quiz-feedback" style="font-size:15px; font-weight:700; min-height:24px;"></div>
+                    </div>
+                </div>
+
+                <!-- MODO PINTAR -->
+                <div id="mapa-pintar" style="display:none;">
+                    <p style="font-size:14px; margin-bottom:6px;"><b>1.</b> Elige un color. <b>2.</b> Toca el país que va con ese color. ¡Complétalo todo!</p>
+                    <div id="mapa-paleta" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+                        <button onclick="MapaSur.elegir(this,'rojo')" style="background:#e63946; color:#fff; border:3px solid transparent; border-radius:10px; padding:8px 12px; font-weight:bold; cursor:pointer;">Chile = ROJO</button>
+                        <button onclick="MapaSur.elegir(this,'verde')" style="background:#74c69d; border:3px solid transparent; border-radius:10px; padding:8px 12px; font-weight:bold; cursor:pointer;">Perú = VERDE</button>
+                        <button onclick="MapaSur.elegir(this,'amarillo')" style="background:#ffd166; border:3px solid transparent; border-radius:10px; padding:8px 12px; font-weight:bold; cursor:pointer;">Bolivia = AMARILLO</button>
+                        <button onclick="MapaSur.elegir(this,'celeste')" style="background:#90d8f7; border:3px solid transparent; border-radius:10px; padding:8px 12px; font-weight:bold; cursor:pointer;">Argentina = CELESTE</button>
+                        <button onclick="MapaSur.elegir(this,'cafe')" style="background:#e8d8b8; border:3px solid transparent; border-radius:10px; padding:8px 12px; font-weight:bold; cursor:pointer;">Otros = CAFÉ</button>
+                        <button onclick="MapaSur.elegir(this,'azul')" style="background:#3a86cf; color:#fff; border:3px solid transparent; border-radius:10px; padding:8px 12px; font-weight:bold; cursor:pointer;">Océanos = AZUL</button>
+                    </div>
+                    <svg viewBox="0 0 700 870" style="width:100%; max-width:540px; display:block; margin:0 auto;">
+                        <rect class="mapa-zona" data-color="azul" x="0" y="0" width="700" height="870" fill="#ffffff" stroke="#333" stroke-width="2" rx="14" style="cursor:pointer;"/>
+                        <text x="38" y="430" font-size="23" fill="#999" font-weight="bold" pointer-events="none">OCÉANO</text>
+                        <text x="34" y="458" font-size="23" fill="#999" font-weight="bold" pointer-events="none">PACÍFICO</text>
+                        <text x="545" y="640" font-size="23" fill="#999" font-weight="bold" pointer-events="none">OCÉANO</text>
+                        <text x="538" y="668" font-size="23" fill="#999" font-weight="bold" pointer-events="none">ATLÁNTICO</text>
+                        <path class="mapa-zona" data-color="cafe" d="M150,95 L250,55 L340,65 L430,95 L540,160 L640,270 L600,380 L545,450 L495,535 L455,660 L420,780 L370,835 L340,820 L310,700 L285,550 L270,430 L215,290 L165,195 Z" fill="#ffffff" stroke="#333" stroke-width="3" style="cursor:pointer;"/>
+                        <path class="mapa-zona" data-color="verde" d="M195,245 L215,290 L270,430 L305,435 L330,360 L285,265 Z" fill="#ffffff" stroke="#333" stroke-width="2.5" style="cursor:pointer;"/>
+                        <path class="mapa-zona" data-color="amarillo" d="M305,435 L330,360 L420,345 L455,430 L430,468 L322,458 Z" fill="#ffffff" stroke="#333" stroke-width="2.5" style="cursor:pointer;"/>
+                        <path class="mapa-zona" data-color="celeste" d="M322,458 L430,468 L442,545 L455,660 L420,780 L370,835 L370,815 L345,700 L320,560 Z" fill="#ffffff" stroke="#333" stroke-width="2.5" style="cursor:pointer;"/>
+                        <path class="mapa-zona" data-color="rojo" d="M270,430 L305,435 L322,458 L320,560 L345,700 L370,815 L370,835 L340,820 L310,700 L285,550 Z" fill="#ffffff" stroke="#333" stroke-width="2.5" style="cursor:pointer;"/>
+                        <text x="455" y="290" font-size="26" font-weight="bold" fill="#999" pointer-events="none">BRASIL</text>
+                        <text x="205" y="360" font-size="17" font-weight="bold" fill="#999" pointer-events="none">PERÚ</text>
+                        <text x="340" y="415" font-size="16" font-weight="bold" fill="#999" pointer-events="none">BOLIVIA</text>
+                        <text x="372" y="600" font-size="17" font-weight="bold" fill="#999" pointer-events="none">ARGENTINA</text>
+                        <text transform="rotate(75 302 500)" x="302" y="500" font-size="21" font-weight="bold" fill="#bbb" pointer-events="none">CHILE</text>
+                    </svg>
+                    <div id="mapa-pintar-feedback" style="font-size:16px; font-weight:800; text-align:center; min-height:28px; margin-top:8px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================================================
              PANTALLA 6: TALLER DE LECTURA ACTIVA CON ELIUBOT
              ========================================================================== -->
         <section class="view-section" id="reading-view">
@@ -1322,11 +1438,11 @@
          CARGA DE SCRIPTS JS (ORDEN CRÍTICO DE DEPENDENCIAS)
          ========================================================================== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-client.js?v=43"></script>
-    <script src="js/curriculum.js?v=43"></script>
-    <script src="js/diary.js?v=43"></script>
-    <script src="js/parent.js?v=43"></script>
-    <script src="js/app.js?v=43"></script>
+    <script src="js/supabase-client.js?v=44"></script>
+    <script src="js/curriculum.js?v=44"></script>
+    <script src="js/diary.js?v=44"></script>
+    <script src="js/parent.js?v=44"></script>
+    <script src="js/app.js?v=44"></script>
 
 </body>
 </html>

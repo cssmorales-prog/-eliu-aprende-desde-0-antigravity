@@ -4099,3 +4099,89 @@ window.addEventListener('DOMContentLoaded', () => {
     // El check-in de hábitos queda disponible pero no bloquea la entrada.
     App.showView('kids-dashboard-view');
 });
+
+// =====================================================================
+// MAPA DE AMERICA DEL SUR: aprender y pintar (Historia OA9)
+// =====================================================================
+const MapaSur = {
+    color: null,
+    pintadas: {},
+    colores: { rojo: '#e63946', verde: '#74c69d', amarillo: '#ffd166', celeste: '#90d8f7', cafe: '#e8d8b8', azul: '#3a86cf' },
+
+    abrir() {
+        App.showView('mapa-view');
+    },
+
+    modo(cual) {
+        const ap = document.getElementById('mapa-aprender');
+        const pi = document.getElementById('mapa-pintar');
+        const tabA = document.getElementById('mapa-tab-aprender');
+        const tabP = document.getElementById('mapa-tab-pintar');
+        if (!ap || !pi) return;
+        if (cual === 'pintar') {
+            ap.style.display = 'none'; pi.style.display = 'block';
+            if (tabA) { tabA.style.background = '#e0e0e0'; tabA.style.color = '#333'; }
+            if (tabP) { tabP.style.background = '#2a9d8f'; tabP.style.color = '#fff'; }
+        } else {
+            ap.style.display = 'block'; pi.style.display = 'none';
+            if (tabA) { tabA.style.background = '#2a9d8f'; tabA.style.color = '#fff'; }
+            if (tabP) { tabP.style.background = '#e0e0e0'; tabP.style.color = '#333'; }
+        }
+    },
+
+    elegir(btn, color) {
+        this.color = color;
+        const paleta = document.getElementById('mapa-paleta');
+        if (paleta) {
+            const botones = paleta.querySelectorAll('button');
+            for (let i = 0; i < botones.length; i++) { botones[i].style.borderColor = 'transparent'; }
+        }
+        btn.style.borderColor = '#333';
+        this.aviso('Ahora toca la zona que va en ese color 👆', '#0b3954');
+    },
+
+    tocar(zona) {
+        const esperado = zona.getAttribute('data-color');
+        if (!this.color) { this.aviso('Primero elige un color abajo 👇', '#b45309'); return; }
+        if (this.color === esperado) {
+            zona.setAttribute('fill', this.colores[esperado]);
+            this.pintadas[esperado] = true;
+            let total = 0;
+            for (const k in this.colores) { if (this.pintadas[k]) total = total + 1; }
+            if (total >= 6) {
+                this.aviso('🎉 ¡MAPA COMPLETO! Eres un súper explorador de América del Sur 🏆', '#1b5e3b');
+            } else {
+                this.aviso('¡Muy bien! ⭐ Van ' + total + ' de 6', '#1b5e3b');
+            }
+        } else {
+            this.aviso('🤔 Esa zona va de OTRO color. Mira la lista de nuevo.', '#b00020');
+        }
+    },
+
+    aviso(texto, color) {
+        const f = document.getElementById('mapa-pintar-feedback');
+        if (f) { f.innerText = texto; f.style.color = color; }
+    },
+
+    responder(btn, correcta) {
+        const feedback = document.getElementById('mapa-quiz-feedback');
+        if (correcta) {
+            btn.style.background = '#2ecc71'; btn.style.color = '#fff';
+            if (feedback) { feedback.innerText = '¡Correcto! ⭐ Eres un genio de la geografía.'; feedback.style.color = '#1b5e3b'; }
+            const grupo = btn.parentElement ? btn.parentElement.querySelectorAll('button') : [];
+            for (let i = 0; i < grupo.length; i++) { grupo[i].disabled = true; }
+        } else {
+            btn.style.background = '#e76f51'; btn.style.color = '#fff';
+            if (feedback) { feedback.innerText = 'Casi… mira el mapa de arriba y prueba otra vez 😉'; feedback.style.color = '#b00020'; }
+        }
+    }
+};
+
+// Delegacion de clics para las zonas pintables del mapa
+document.addEventListener('click', function (ev) {
+    let nodo = ev.target;
+    while (nodo && nodo !== document) {
+        if (nodo.classList && nodo.classList.contains('mapa-zona')) { MapaSur.tocar(nodo); return; }
+        nodo = nodo.parentNode;
+    }
+});
